@@ -1,0 +1,2588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remuneração Variável Armazém</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --bg: #14161a; --surface: #1b1e24; --surface-2: #23262e; --surface-3: #2b2e37;
+    --border: #33363f; --border-strong: #454852;
+    --text: #f3f1e9; --text-secondary: #a3a4a8; --text-muted: #6f7076;
+    --amber: #f5a623; --amber-dark: #4a3616;
+    --teal: #2bb673; --red: #e5595c;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --radius: 10px;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-body); line-height:1.5; }
+  h1,h2,h3{ font-family:var(--font-display); font-weight:500; margin:0; }
+  header.top{ display:flex; align-items:center; justify-content:space-between; padding:18px 32px; border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--bg); z-index:10; flex-wrap:wrap; gap:12px; }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand .mark{ width:34px; height:34px; border-radius:8px; background:var(--amber); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-weight:500; color:#1a1300; font-size:13px; }
+  .brand .name{ font-family:var(--font-display); font-size:17px; }
+  .brand .sub{ font-family:var(--font-mono); font-size:11px; color:var(--text-muted); }
+  nav.main-nav{ display:flex; gap:6px; }
+  nav.main-nav button{ background:transparent; border:1px solid transparent; color:var(--text-secondary); font-family:var(--font-body); font-size:14px; font-weight:500; padding:8px 16px; border-radius:8px; cursor:pointer; }
+  nav.main-nav button.active{ background:var(--surface-2); color:var(--text); border-color:var(--border); }
+  main{ max-width:1100px; margin:0 auto; padding:32px; }
+  .view{ display:none; } .view.active{ display:block; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; }
+  .row-flex{ display:flex; align-items:center; gap:12px; } .between{ justify-content:space-between; }
+  input, select{ background:var(--surface-2); border:1px solid var(--border); color:var(--text); border-radius:6px; padding:8px 10px; font-family:var(--font-body); font-size:13px; }
+  input:focus, select:focus{ outline:none; border-color:var(--amber); }
+  label.lab{ font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.04em; display:block; margin-bottom:4px; }
+  button.btn{ background:var(--surface-2); border:1px solid var(--border-strong); color:var(--text); font-family:var(--font-body); font-size:13px; font-weight:500; padding:9px 14px; border-radius:8px; cursor:pointer; }
+  button.btn.primary{ background:var(--amber); color:#1a1300; border-color:var(--amber); }
+  button.btn:hover{ filter:brightness(1.1); }
+  button.btn:disabled{ opacity:.5; cursor:not-allowed; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  th{ text-align:left; font-size:11px; color:var(--text-muted); font-weight:500; padding:8px 10px; text-transform:uppercase; letter-spacing:.03em; }
+  td{ padding:10px; border-top:1px solid var(--border); font-family:var(--font-mono); font-size:13px; }
+  td:first-child{ font-family:var(--font-body); }
+  .login-wrap{ display:flex; justify-content:center; padding:60px 20px; }
+  .login-box{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:32px; width:360px; }
+  .login-box h2{ font-size:18px; margin-bottom:4px; }
+  .login-box .sub{ font-size:12px; color:var(--text-secondary); margin-bottom:20px; }
+  .login-box input{ width:100%; margin-bottom:10px; }
+  .login-box .err{ font-size:12px; color:var(--red); margin-top:8px; display:none; }
+  .login-box .ok{ font-size:12px; color:var(--teal); margin-top:8px; display:none; }
+  .switch-link{ font-size:12px; color:var(--text-secondary); text-align:center; margin-top:14px; cursor:pointer; }
+  .switch-link b{ color:var(--amber); font-weight:500; }
+  .base-pill{ display:inline-flex; align-items:center; gap:6px; font-size:11px; padding:4px 10px; border-radius:20px; background:var(--amber-dark); color:var(--amber); font-family:var(--font-mono); }
+  .layout{ display:grid; grid-template-columns:200px 1fr; gap:28px; }
+  .side-nav{ display:flex; flex-direction:column; gap:4px; }
+  .side-nav button{ text-align:left; background:transparent; border:none; color:var(--text-secondary); font-family:var(--font-body); font-size:13px; padding:10px 12px; border-radius:8px; cursor:pointer; border-left:2px solid transparent; }
+  .side-nav button.active{ background:var(--surface); color:var(--text); border-left-color:var(--amber); }
+  .panel{ display:none; } .panel.active{ display:block; }
+  .placeholder{ border:1px dashed var(--border-strong); border-radius:var(--radius); padding:20px; font-size:13px; color:var(--text-secondary); text-align:center; }
+  .form-grid{ display:grid; grid-template-columns:2fr 1.2fr 1fr 1.4fr 1.3fr 2fr auto; gap:8px; align-items:end; }
+  .checkbox-row{ display:flex; gap:14px; flex-wrap:wrap; margin:10px 0; }
+  .checkbox-row label{ display:flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary); }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--surface-3); border:1px solid var(--border-strong); color:var(--text); padding:10px 18px; border-radius:8px; font-size:13px; opacity:0; transition:opacity .3s; pointer-events:none; z-index:100; }
+  .toast.show{ opacity:1; }
+
+  .arm-collapse{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:2px 16px; }
+  .arm-collapse summary{ cursor:pointer; padding:12px 0; font-size:13px; font-weight:500; list-style:none; display:flex; align-items:center; justify-content:space-between; }
+  .arm-collapse summary::-webkit-details-marker{ display:none; }
+  .arm-collapse summary::before{ content:'▸'; margin-right:8px; color:var(--text-muted); font-size:11px; }
+  .arm-collapse[open] summary::before{ content:'▾'; }
+  .arm-collapse[open]{ padding-bottom:14px; }
+
+  #view-corrida{ background:radial-gradient(ellipse at top,#16324f 0%,#0a1622 60%,#060c14 100%); min-height:100vh; padding:32px; }
+  .corrida-header{ text-align:center; margin-bottom:20px; }
+  .corrida-header h1{ font-family:var(--font-display); color:#fff; font-size:26px; }
+  .corrida-header .sub{ color:#8fa3c0; font-size:12px; margin-top:4px; font-family:var(--font-mono); }
+  .podium{ display:flex; align-items:flex-end; justify-content:center; gap:14px; max-width:600px; margin:0 auto 24px; }
+  .podium-slot{ text-align:center; } .podium-slot .medal{ font-size:28px; } .podium-slot .pcar{ font-size:30px; margin:4px 0; }
+  .podium-slot .pname{ color:#fff; font-size:12px; font-weight:500; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .podium-slot .ppts{ color:#f5c542; font-family:var(--font-mono); font-size:12px; margin-top:2px; }
+  .podium-block{ border-radius:8px 8px 0 0; margin-top:8px; background:linear-gradient(180deg,#3a4a63,#232f42); border:1px solid #4a5d7a; border-bottom:none; display:flex; align-items:center; justify-content:center; color:#9fb0c8; font-family:var(--font-display); font-weight:500; }
+  .podium-slot.gold .podium-block{ height:78px; background:linear-gradient(180deg,#4a3f1a,#2c2610); border-color:#f5c542; }
+  .podium-slot.silver .podium-block{ height:56px; }
+  .podium-slot.bronze .podium-block{ height:38px; background:linear-gradient(180deg,#3d2a1a,#241a10); border-color:#c9784a; }
+  .corrida-track{ position:relative; border-radius:16px; margin-bottom:16px; overflow:hidden; background:repeating-linear-gradient(180deg,#3a3d42 0,#3a3d42 2px,transparent 2px,transparent 4px), linear-gradient(#33363a,#2a2c30); border:3px solid #1c1e21; padding:6px 60px 6px 6px; }
+  .corrida-lane{ position:relative; height:52px; margin:2px 0; border-radius:6px; background:rgba(255,255,255,.02); }
+  .corrida-trail{ position:absolute; left:0; top:0; bottom:0; border-radius:6px; transition:width 1s; }
+  .corrida-car{ position:absolute; top:50%; transform:translateY(-50%); display:flex; align-items:center; gap:8px; transition:left 1s; white-space:nowrap; z-index:2; }
+  .corrida-car .emoji{ font-size:26px; }
+  .corrida-car .tag{ background:rgba(10,12,15,.72); border:1px solid rgba(255,255,255,.12); border-radius:8px; padding:3px 10px; font-size:12px; color:#fff; }
+  .corrida-car .tag b{ color:#f5c542; font-family:var(--font-mono); margin-left:6px; }
+  .corrida-rank-badge{ position:absolute; left:4px; top:50%; transform:translateY(-50%); width:20px; height:20px; border-radius:50%; background:#1c1e21; border:1px solid #f5c542; color:#f5c542; font-size:10px; font-family:var(--font-mono); display:flex; align-items:center; justify-content:center; z-index:1; }
+  .corrida-footer{ text-align:center; margin-top:20px; color:#c9d6ea; font-size:13px; }
+  .corrida-footer b{ color:#f5c542; }
+
+  /* App do colaborador — light theme */
+  .emp{ --e-bg:#f4f5f7; --e-surface:#fff; --e-border:#e3e5ea; --e-text:#1c1e22; --e-text-sec:#6b6f76; --e-text-muted:#9a9ea6; --e-navy:#1f2b5c; --e-green:#1fa15a; --e-red:#e0393e;
+    background:var(--e-bg); color:var(--e-text); border-radius:14px; padding:22px; font-family:var(--font-body); }
+  .emp input{ background:#fff; border:1px solid var(--e-border); color:var(--e-text); }
+  .emp .login-box{ background:var(--e-surface); border-color:var(--e-border); }
+  .emp .login-box h2, .emp .login-box .sub{ color:var(--e-text); }
+  .emp .login-box .sub{ color:var(--e-text-sec); }
+  .emp-card{ background:var(--e-surface); border:1px solid var(--e-border); border-radius:12px; padding:16px; margin-bottom:12px; }
+  .ap-var-card{ background:var(--e-surface); border:1px solid var(--e-border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .ap-var-card .nome{ font-size:13px; font-weight:500; }
+  .ap-var-card .row2{ display:flex; justify-content:space-between; align-items:center; margin-top:6px; font-size:12px; color:var(--e-text-sec); }
+  .ap-var-card .badge{ font-size:11px; font-weight:500; padding:2px 8px; border-radius:20px; }
+  .ap-var-card .badge.ok{ background:#e4f6ec; color:#1fa15a; }
+  .ap-var-card .badge.fail{ background:#fce9ea; color:#e0393e; }
+  .ap-var-card .valor{ font-family:var(--font-mono); font-weight:500; font-size:13px; margin-top:4px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="mark">RV</div>
+    <div>
+      <div class="name">Remuneração Variável Armazém</div>
+      <div class="sub">Cobeb &middot; Lagoa da Prata, Pará de Minas e Abaeté</div>
+    </div>
+  </div>
+  <nav class="main-nav">
+    <button class="active" data-nav="gerencial">Gerencial</button>
+    <button data-nav="app">App do colaborador</button>
+    <button data-nav="corrida">🏁 Corrida de Pontos</button>
+  </nav>
+</header>
+
+<main>
+
+  <section id="view-gerencial" class="view active">
+
+    <div id="ger-login-wrap" class="login-wrap">
+      <div class="login-box">
+        <h2 id="ger-form-title">Entrar no Gerencial</h2>
+        <div class="sub" id="ger-form-sub">Usuário e senha da supervisora</div>
+
+        <div id="ger-login-form">
+          <label class="lab">usuário</label>
+          <input id="lg-user" type="text" placeholder="joelcio.gomes"/>
+          <label class="lab">senha</label>
+          <input id="lg-pass" type="password" placeholder="••••••••"/>
+          <button class="btn primary" id="lg-submit" style="width:100%;margin-top:6px">Entrar</button>
+          <div class="err" id="lg-err"></div>
+          <div class="switch-link">Ainda não tem cadastro? <b id="lg-goto-signup">Criar cadastro de supervisora</b></div>
+        </div>
+
+        <div id="ger-signup-gate">
+          <label class="lab">código de administrador</label>
+          <input id="su-admincode" type="password" placeholder="Só quem tem esse código pode cadastrar supervisoras"/>
+          <button class="btn primary" id="su-gate-submit" style="width:100%;margin-top:6px">Continuar</button>
+          <div class="err" id="su-gate-err"></div>
+          <div class="switch-link"><b id="su-gate-back">Voltar para login</b></div>
+        </div>
+
+        <div id="ger-signup-form" style="display:none">
+          <label class="lab">nome de exibição</label>
+          <input id="su-nome" type="text" placeholder="Joelcio Gomes"/>
+          <label class="lab">usuário (login)</label>
+          <input id="su-user" type="text" placeholder="joelcio.gomes"/>
+          <label class="lab">senha</label>
+          <input id="su-pass" type="password" placeholder="Cobeb@2026"/>
+          <label class="lab">bases que essa supervisora acessa</label>
+          <div class="checkbox-row">
+            <label><input type="checkbox" value="Lagoa da Prata" class="su-base"/> Lagoa da Prata</label>
+            <label><input type="checkbox" value="Pará de Minas" class="su-base"/> Pará de Minas</label>
+            <label><input type="checkbox" value="Abaeté" class="su-base"/> Abaeté</label>
+          </div>
+          <button class="btn primary" id="su-submit" style="width:100%;margin-top:6px">Criar cadastro</button>
+          <div class="err" id="su-err"></div>
+          <div class="ok" id="su-ok"></div>
+          <div class="switch-link"><b id="su-goto-login">Já tenho cadastro, voltar para login</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="ger-panel-wrap" style="display:none">
+      <div class="row-flex between" style="margin-bottom:20px">
+        <div class="row-flex" style="gap:10px">
+          <span style="font-size:13px;color:var(--text-secondary)">base ativa</span>
+          <select id="base-ativa"></select>
+        </div>
+        <div class="row-flex" style="gap:10px">
+          <span id="ger-user-label" style="font-size:12px;color:var(--text-secondary)"></span>
+          <button class="btn" id="ger-logout" style="font-size:12px;padding:6px 12px">Sair</button>
+        </div>
+      </div>
+
+      <div class="layout">
+        <div class="side-nav">
+          <button class="active" data-panel="colab">Cadastro de Funcionários</button>
+          <button data-panel="alocacao">Alocação de Variáveis</button>
+          <button data-panel="indicadores">Indicadores Armazém</button>
+          <button data-panel="jornada">Ociosidade — Jornada Diária</button>
+          <button data-panel="pontos">Programa de Pontos</button>
+          <button data-panel="resultados">Resultados por Colaborador</button>
+          <button data-panel="anual">Visão Anual</button>
+        </div>
+
+        <div>
+          <div id="panel-colab" class="panel active">
+            <div style="margin-bottom:14px">
+              <h2 style="font-size:16px">Cadastro de Funcionários</h2>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Os dados abaixo são só da base selecionada acima, e ficam salvos para toda a equipe</div>
+            </div>
+
+            <div class="card" style="margin-bottom:16px">
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px" id="nf-form-title">Novo funcionário</div>
+              <div class="form-grid">
+                <div><label class="lab">nome completo</label><input id="nf-nome" type="text" style="width:100%"/></div>
+                <div><label class="lab">cpf</label><input id="nf-cpf" type="text" placeholder="000.000.000-00" style="width:100%"/></div>
+                <div><label class="lab">nascimento</label><input id="nf-nasc" type="text" placeholder="dd/mm/aaaa" style="width:100%"/></div>
+                <div><label class="lab">função</label><input id="nf-funcao" type="text" placeholder="Ajudante de Carregamento" style="width:100%"/></div>
+                <div><label class="lab">turno</label>
+                  <select id="nf-turno" style="width:100%"><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option></select>
+                </div>
+                <div><label class="lab">apelidos (separar por vírgula)</label><input id="nf-apelidos" type="text" style="width:100%"/></div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn primary" id="nf-add">Adicionar</button>
+                  <button class="btn" id="nf-cancel" style="display:none">Cancelar</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-bottom:16px">
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">Importar funcionários em massa (planilha com colunas: Filial, Nome, Cargo, CPF, Data Nascimento)</div>
+              <div style="display:flex;gap:10px;align-items:end">
+                <div style="flex:1"><input id="bulk-file" type="file" accept=".xlsx"/></div>
+                <button class="btn primary" id="bulk-import">Importar planilha</button>
+              </div>
+              <div id="bulk-status" style="font-size:12px;color:var(--text-secondary);margin-top:10px"></div>
+            </div>
+
+            <div style="overflow-x:auto"><table id="colab-table"></table></div>
+          </div>
+
+          <div id="panel-alocacao" class="panel">
+            <div style="margin-bottom:14px">
+              <h2 style="font-size:16px">Alocação de Variáveis</h2>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Escolha o mês, o funcionário, e marque quais indicadores valem para ele</div>
+            </div>
+            <div class="card" style="margin-bottom:16px">
+              <div style="display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:14px">
+                <div><label class="lab">mês</label><input id="aloc-mes" type="text" value="2026-06" placeholder="YYYY-MM" style="width:100%"/></div>
+                <div><label class="lab">funcionário</label><select id="aloc-func" style="width:100%"></select></div>
+              </div>
+              <div class="lab">variáveis do mês para esse funcionário</div>
+              <div id="aloc-checklist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px;margin:8px 0 14px"></div>
+              <button class="btn primary" id="aloc-salvar">Salvar vínculo do mês</button>
+            </div>
+            <div class="lab" style="margin-bottom:8px">vínculos já salvos</div>
+            <div style="overflow-x:auto"><table id="aloc-table"></table></div>
+          </div>
+
+          <div id="panel-indicadores" class="panel">
+            <div style="margin-bottom:14px">
+              <h2 style="font-size:16px">Indicadores Armazém</h2>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Importe as duas planilhas do mês — os resultados ficam salvos para toda a equipe</div>
+            </div>
+            <div class="card" style="margin-bottom:16px">
+              <label class="lab">mês de referência</label>
+              <input id="imp-mes" type="text" value="2026-06" placeholder="YYYY-MM" style="width:160px;margin-bottom:12px"/>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                <div>
+                  <label class="lab">valor do ponto (produtividade)</label>
+                  <input id="cfg-valor-ponto" type="number" step="0.000000000001" style="width:100%"/>
+                </div>
+                <div>
+                  <label class="lab">penalidade por erro de montagem (pontos)</label>
+                  <input id="cfg-penalidade" type="number" step="1" style="width:100%"/>
+                </div>
+              </div>
+              <button class="btn" id="cfg-valor-ponto-salvar" style="margin-bottom:14px">Salvar valores</button>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+                <div>
+                  <label class="lab">planilha 1 — ajudante de carregamento (Tempo+Separacao+Palete, Erro+Carregamento, Ocorrências+Conferencia)</label>
+                  <input id="imp-file1" type="file" accept=".xlsx"/>
+                </div>
+                <div>
+                  <label class="lab">planilha 2 — indicadores gerais do armazém (EFD, EFC, Prestação Fisica, etc.)</label>
+                  <input id="imp-file2" type="file" accept=".xlsx"/>
+                </div>
+              </div>
+              <button class="btn primary" id="imp-processar">Processar e salvar</button>
+              <div id="imp-status" style="font-size:12px;color:var(--text-secondary);margin-top:10px"></div>
+            </div>
+            <div class="lab" style="margin-bottom:8px">resultados do mês (base ativa)</div>
+            <div style="overflow-x:auto"><table id="armazem-table"></table></div>
+
+            <div class="lab" style="margin:20px 0 8px">WLP por colaborador <span style="font-weight:400;text-transform:none;font-size:11px">(informativo — não é variável de pagamento)</span></div>
+            <div style="overflow-x:auto"><table id="wlp-table"></table></div>
+          </div>
+
+          <div id="panel-jornada" class="panel">
+            <div style="margin-bottom:14px">
+              <h2 style="font-size:16px">Ociosidade — Jornada Diária</h2>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Como o sistema calculou a jornada prevista de cada dia (21:30 até o último palete do turno), com opção de corrigir manualmente</div>
+            </div>
+            <div class="row-flex" style="margin-bottom:14px;gap:10px">
+              <label class="lab" style="margin:0">mês</label>
+              <input id="jrn-mes" type="text" value="2026-06" style="width:140px"/>
+            </div>
+            <div style="overflow-x:auto"><table id="jornada-table"></table></div>
+            <p style="font-size:11px;color:var(--text-muted);margin-top:10px">Jornada bruta: do horário fixo (21:30) até o último palete finalizado por qualquer ajudante naquele turno. Jornada líquida: já descontando 1h15 de refeição/intervalo — exceto quando a jornada bruta é menor que 6h. Se o valor de "correção manual" estiver preenchido, ele é usado no lugar do calculado para a Ociosidade daquele dia.</p>
+          </div>
+
+          <div id="panel-pontos" class="panel">
+            <div style="margin-bottom:14px">
+              <h2 style="font-size:16px">Programa de Pontos — Corrida</h2>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Configure os valores e lance destaques/ocorrências — tudo salvo por base</div>
+            </div>
+
+            <details class="arm-collapse" open style="margin-bottom:10px">
+              <summary>Configuração de pontos</summary>
+              <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-top:12px">
+                <div><label class="lab">Absenteísmo ≤2% (pts)</label><input id="cfg-abs2" type="number" value="10" style="width:100%"/></div>
+                <div><label class="lab">Absenteísmo ≤1% (pts)</label><input id="cfg-abs1" type="number" value="20" style="width:100%"/></div>
+                <div><label class="lab">Absenteísmo ≤0,5% (pts)</label><input id="cfg-abs05" type="number" value="30" style="width:100%"/></div>
+                <div><label class="lab">Perda por dia de falta</label><input id="cfg-faltaperda" type="number" value="5" style="width:100%"/></div>
+                <div><label class="lab">Pts por 1% atingimento</label><input id="cfg-varmult" type="number" step="0.1" value="1" style="width:100%"/></div>
+                <div><label class="lab">Destaque do mês</label><input id="cfg-destaque" type="number" value="50" style="width:100%"/></div>
+                <div><label class="lab">Perda — segurança</label><input id="cfg-seguranca" type="number" value="40" style="width:100%"/></div>
+                <div><label class="lab">Perda — conduta</label><input id="cfg-conduta" type="number" value="40" style="width:100%"/></div>
+                <div><label class="lab">Relato segurança (pts)</label><input id="cfg-relatoseg" type="number" value="5" style="width:100%"/></div>
+                <div><label class="lab">Ponto em aberto (perda)</label><input id="cfg-pontoaberto" type="number" value="5" style="width:100%"/></div>
+              </div>
+              <button class="btn primary" id="cfg-salvar" style="margin-top:12px">Salvar configuração</button>
+            </details>
+
+            <details class="arm-collapse" style="margin-bottom:10px">
+              <summary>Absenteísmo mensal</summary>
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:end;margin:10px 0">
+                <div><label class="lab">funcionário</label><select id="ab-func" style="width:100%"></select></div>
+                <div><label class="lab">mês</label><input id="ab-mes" type="text" value="2026-06" style="width:100%"/></div>
+                <div><label class="lab">% absenteísmo</label><input id="ab-pct" type="number" step="0.01" style="width:100%"/></div>
+                <div><label class="lab">dias de falta</label><input id="ab-dias" type="number" style="width:100%"/></div>
+                <button class="btn primary" id="ab-add">Salvar</button>
+              </div>
+              <div style="overflow-x:auto"><table id="ab-table"></table></div>
+            </details>
+
+            <details class="arm-collapse" style="margin-bottom:10px">
+              <summary>Destaques do mês</summary>
+              <div style="display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end;margin:10px 0">
+                <div><label class="lab">funcionário</label><select id="dq-func" style="width:100%"></select></div>
+                <div><label class="lab">mês</label><input id="dq-mes" type="text" value="2026-06" style="width:100%"/></div>
+                <button class="btn primary" id="dq-add">Marcar destaque</button>
+              </div>
+              <div style="overflow-x:auto"><table id="dq-table"></table></div>
+            </details>
+
+            <details class="arm-collapse" style="margin-bottom:10px">
+              <summary>Ocorrências de segurança</summary>
+              <div style="display:grid;grid-template-columns:1.6fr 1fr 2fr 1fr auto;gap:8px;align-items:end;margin:10px 0">
+                <div><label class="lab">funcionário</label><select id="sg-func" style="width:100%"></select></div>
+                <div><label class="lab">data</label><input id="sg-data" type="text" placeholder="dd/mm/aaaa" style="width:100%"/></div>
+                <div><label class="lab">descrição</label><input id="sg-desc" type="text" style="width:100%"/></div>
+                <div><label class="lab">pontos perdidos</label><input id="sg-pontos" type="number" style="width:100%"/></div>
+                <button class="btn primary" id="sg-add">Lançar</button>
+              </div>
+              <div style="overflow-x:auto"><table id="sg-table"></table></div>
+            </details>
+
+            <details class="arm-collapse" style="margin-bottom:10px">
+              <summary>Ocorrências de conduta</summary>
+              <div style="display:grid;grid-template-columns:1.6fr 1fr 2fr 1fr auto;gap:8px;align-items:end;margin:10px 0">
+                <div><label class="lab">funcionário</label><select id="cd-func" style="width:100%"></select></div>
+                <div><label class="lab">data</label><input id="cd-data" type="text" placeholder="dd/mm/aaaa" style="width:100%"/></div>
+                <div><label class="lab">descrição</label><input id="cd-desc" type="text" style="width:100%"/></div>
+                <div><label class="lab">pontos perdidos</label><input id="cd-pontos" type="number" style="width:100%"/></div>
+                <button class="btn primary" id="cd-add">Lançar</button>
+              </div>
+              <div style="overflow-x:auto"><table id="cd-table"></table></div>
+            </details>
+
+            <details class="arm-collapse" style="margin-bottom:10px">
+              <summary>Relatos de segurança <span style="font-weight:400;font-size:11px;color:var(--text-muted)">(ganha pontos)</span></summary>
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin:10px 0">
+                <div><label class="lab">funcionário</label><select id="rs-func" style="width:100%"></select></div>
+                <div><label class="lab">mês</label><input id="rs-mes" type="text" value="2026-06" style="width:100%"/></div>
+                <div><label class="lab">quantidade</label><input id="rs-qtd" type="number" min="0" style="width:100%"/></div>
+                <button class="btn primary" id="rs-add">Salvar</button>
+              </div>
+              <div style="overflow-x:auto"><table id="rs-table"></table></div>
+            </details>
+
+            <details class="arm-collapse" style="margin-bottom:10px">
+              <summary>Pontos em aberto <span style="font-weight:400;font-size:11px;color:var(--text-muted)">(perde pontos)</span></summary>
+              <div style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin:10px 0">
+                <div><label class="lab">funcionário</label><select id="pa-func" style="width:100%"></select></div>
+                <div><label class="lab">mês</label><input id="pa-mes" type="text" value="2026-06" style="width:100%"/></div>
+                <div><label class="lab">quantidade</label><input id="pa-qtd" type="number" min="0" style="width:100%"/></div>
+                <button class="btn primary" id="pa-add">Salvar</button>
+              </div>
+              <div style="overflow-x:auto"><table id="pa-table"></table></div>
+            </details>
+
+            <h3 style="font-size:14px;margin:16px 0 8px">Ranking acumulado</h3>
+            <div style="overflow-x:auto"><table id="ranking-table"></table></div>
+          </div>
+
+          <div id="panel-resultados" class="panel">
+            <div style="margin-bottom:14px">
+              <h2 style="font-size:16px">Resultados por Colaborador</h2>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Valor fechado de cada variável por funcionário, e o total a pagar</div>
+            </div>
+            <div class="row-flex" style="margin-bottom:14px;gap:10px">
+              <label class="lab" style="margin:0">mês</label>
+              <input id="res-mes" type="text" value="2026-06" style="width:140px"/>
+              <button class="btn" id="res-exportar" style="margin-left:auto">Exportar para Excel</button>
+            </div>
+            <div style="overflow-x:auto"><table id="resultados-table"></table></div>
+          </div>
+
+          <div id="panel-anual" class="panel">
+            <div style="margin-bottom:14px">
+              <h2 style="font-size:16px">Visão Anual</h2>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Total a pagar por colaborador, mês a mês, com o total do ano</div>
+            </div>
+            <div class="row-flex" style="margin-bottom:14px;gap:10px">
+              <label class="lab" style="margin:0">ano</label>
+              <input id="anual-ano" type="text" value="2026" style="width:100px"/>
+              <button class="btn" id="anual-exportar" style="margin-left:auto">Exportar para Excel</button>
+            </div>
+            <div id="anual-status" style="font-size:12px;color:var(--text-secondary);margin-bottom:10px"></div>
+            <div style="overflow-x:auto"><table id="anual-table"></table></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-app" class="view">
+    <div class="emp">
+      <div id="app-login-wrap" class="login-wrap">
+        <div class="login-box">
+          <h2>Minha remuneração variável</h2>
+          <div class="sub">Entre com CPF e data de nascimento</div>
+          <input id="app-cpf" type="text" placeholder="000.000.000-00"/>
+          <input id="app-nasc" type="text" placeholder="dd/mm/aaaa"/>
+          <button class="btn primary" id="app-submit" style="width:100%">Entrar</button>
+          <div class="err" id="app-err"></div>
+        </div>
+      </div>
+      <div id="app-profile-wrap" style="display:none;max-width:900px;margin:0 auto">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <div>
+            <div style="font-size:11px;color:var(--e-text-sec);text-transform:uppercase;letter-spacing:.03em" id="ap-funcao-base"></div>
+            <div id="ap-nome" style="font-weight:600;font-size:18px"></div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--e-text-sec)" id="ap-cpf-label"></div>
+            <button class="btn" id="app-logout" style="margin-top:6px">Sair</button>
+          </div>
+        </div>
+
+        <div id="ap-ajudante-dashboard" style="display:none">
+          <div id="ap-sem-dados-diarios" style="display:none;background:#fff3cd;color:#8a6100;border:1px solid #f0d68a;border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:12px">Ainda não há valores diários calculados para este mês — peça pra sua supervisora reimportar a planilha do ajudante (o sistema foi atualizado recentemente para guardar os valores dia a dia).</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px">
+            <div class="emp-card" style="text-align:center;padding:10px">
+              <div style="font-size:10px;color:var(--e-text-sec)">PERÍODO</div>
+              <div id="ap-periodo-mes" style="font-weight:600;font-size:14px;margin-top:4px"></div>
+              <div style="font-size:10px;color:var(--e-text-sec);margin-top:6px">D. ÚTEIS</div>
+              <div id="ap-periodo-dutil" style="font-weight:600;font-size:14px"></div>
+            </div>
+            <div class="emp-card" style="text-align:center;background:linear-gradient(180deg,#fdf1d9,#fff)">
+              <div style="font-size:11px;color:var(--e-text-sec)">RV DO MÊS</div>
+              <div id="ap-rv-parcial" style="font-size:22px;font-weight:600;color:#8a5a00;margin-top:4px"></div>
+              <div style="font-size:10px;color:var(--e-text-sec);margin-top:2px">total acumulado no mês</div>
+            </div>
+            <div class="emp-card" style="text-align:center;background:linear-gradient(180deg,#fdf6e8,#fff)">
+              <div style="font-size:11px;color:var(--e-text-sec)">MEU WLP</div>
+              <div id="ap-wlp-valor-ajudante" style="font-size:22px;font-weight:600;margin-top:4px">—</div>
+              <div id="ap-wlp-sub-ajudante" style="font-size:10px;color:var(--e-text-sec);margin-top:2px"></div>
+            </div>
+          </div>
+
+          <div style="font-size:11px;color:var(--e-text-sec);text-transform:uppercase;letter-spacing:.03em;margin:10px 0 6px">Indicadores principais</div>
+          <div style="font-size:10px;color:var(--e-text-sec);margin-bottom:8px">Clique num indicador pra ver o detalhe. Clique num dia do calendário pra filtrar só aquele dia.</div>
+          <div id="ap-dia-selecionado-aviso" style="display:none;font-size:11px;color:var(--e-navy);margin-bottom:8px;font-weight:500"></div>
+          <div id="ap-indicadores-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px"></div>
+
+          <div style="font-size:11px;color:var(--e-text-sec);text-transform:uppercase;letter-spacing:.03em;margin:10px 0 6px">Resumo do mês</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px" id="ap-resumo-grid"></div>
+
+          <div style="font-size:11px;color:var(--e-text-sec);text-transform:uppercase;letter-spacing:.03em;margin:10px 0 6px">Valores diários (Produtividade)</div>
+          <div id="ap-calendario" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px"></div>
+        </div>
+
+        <div id="ap-generico-wrap">
+          <div class="emp-card" style="text-align:center;background:linear-gradient(180deg,#fdf6e8,#fff);max-width:380px;margin:0 auto 12px">
+            <div style="font-size:12px;color:var(--e-text-sec);margin-bottom:6px">Meu WLP</div>
+            <div style="display:flex;justify-content:center;gap:8px;margin-bottom:8px">
+              <select id="ap-wlp-mes" style="font-size:12px"><option value="2026-06">Junho/2026</option></select>
+            </div>
+            <div id="ap-wlp-valor" style="font-size:30px;font-weight:600;font-family:var(--font-mono)">—</div>
+            <div id="ap-wlp-sub" style="font-size:11px;color:var(--e-text-sec);margin-top:4px"></div>
+          </div>
+          <div class="emp-card" style="text-align:center;background:var(--e-amber-bg,#fdf1d9);max-width:380px;margin:0 auto 12px">
+            <div style="font-size:12px;color:var(--e-text-sec)">Total a receber no mês</div>
+            <div id="ap-total-valor" style="font-size:26px;font-weight:600;font-family:var(--font-mono);color:#8a5a00">—</div>
+            <div id="ap-total-sub" style="font-size:11px;color:var(--e-text-sec);margin-top:2px"></div>
+          </div>
+          <div id="ap-variaveis" style="max-width:380px;margin:0 auto"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-corrida" class="view">
+    <div id="corrida-container"></div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ======= CONFIGURAÇÃO DO SUPABASE =======
+const SUPABASE_URL = 'https://mbteychnzitqvakqloes.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_99AVObN17tKTSBM2wBhwIg_546jF3rn';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const FAKE_EMAIL_DOMAIN = '@rvarmazem.local';
+
+let currentSession = null;
+let minhasBases = [];
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ---------- NAV ----------
+document.querySelectorAll('.main-nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.main-nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-'+btn.dataset.nav).classList.add('active');
+    if(btn.dataset.nav==='corrida' && typeof renderCorrida==='function') renderCorrida();
+  });
+});
+
+// ---------- MODO "SÓ APP" — link separado pra colaboradores, sem acesso ao Gerencial ----------
+// Abra o site com ?colaborador=1 no final do link (ex: https://seusite/index.html?colaborador=1)
+if(new URLSearchParams(location.search).get('colaborador')==='1'){
+  document.querySelector('[data-nav="gerencial"]').style.display = 'none';
+  document.querySelectorAll('.main-nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-app').classList.add('active');
+  document.querySelector('[data-nav="app"]').classList.add('active');
+}
+
+document.querySelectorAll('.side-nav button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.side-nav button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.panel).classList.add('active');
+    const panel = btn.dataset.panel;
+    if(panel==='resultados' && typeof renderResultadosMatriz==='function') renderResultadosMatriz();
+    if(panel==='anual' && typeof renderVisaoAnual==='function') renderVisaoAnual();
+    if(panel==='alocacao' && typeof renderAlocFuncSelect==='function') renderAlocFuncSelect();
+    if(panel==='indicadores' && typeof renderArmazemTable==='function'){ renderArmazemTable(); renderWlpTable(); carregarConfigProdutividade(); }
+    if(panel==='jornada' && typeof renderJornadaTable==='function') renderJornadaTable();
+    if(panel==='pontos' && typeof renderRanking==='function') renderRanking();
+    if(panel==='colab' && typeof renderColab==='function') renderColab();
+  });
+});
+
+// ---------- LOGIN / SIGNUP SUPERVISORA ----------
+const ADMIN_CODE = 'RVArmazem2026Admin';
+
+document.getElementById('lg-goto-signup').addEventListener('click', ()=>{
+  document.getElementById('ger-login-form').style.display='none';
+  document.getElementById('ger-signup-gate').style.display='block';
+  document.getElementById('ger-form-title').textContent = 'Cadastrar supervisora';
+  document.getElementById('ger-form-sub').textContent = 'Informe o código de administrador para continuar';
+});
+document.getElementById('su-gate-back').addEventListener('click', ()=>{
+  document.getElementById('ger-signup-gate').style.display='none';
+  document.getElementById('ger-login-form').style.display='block';
+  document.getElementById('ger-form-title').textContent = 'Entrar no Gerencial';
+  document.getElementById('ger-form-sub').textContent = 'Usuário e senha da supervisora';
+});
+document.getElementById('su-gate-submit').addEventListener('click', ()=>{
+  const code = document.getElementById('su-admincode').value;
+  const errEl = document.getElementById('su-gate-err');
+  if(code !== ADMIN_CODE){
+    errEl.textContent = 'Código incorreto.';
+    errEl.style.display='block';
+    return;
+  }
+  errEl.style.display='none';
+  document.getElementById('su-admincode').value='';
+  document.getElementById('ger-signup-gate').style.display='none';
+  document.getElementById('ger-signup-form').style.display='block';
+  document.getElementById('ger-form-title').textContent = 'Criar cadastro de supervisora';
+  document.getElementById('ger-form-sub').textContent = 'Escolha usuário, senha e as bases que vai gerenciar';
+});
+document.getElementById('su-goto-login').addEventListener('click', ()=>{
+  document.getElementById('ger-signup-form').style.display='none';
+  document.getElementById('ger-login-form').style.display='block';
+  document.getElementById('ger-form-title').textContent = 'Entrar no Gerencial';
+  document.getElementById('ger-form-sub').textContent = 'Usuário e senha da supervisora';
+});
+
+document.getElementById('su-submit').addEventListener('click', async ()=>{
+  const nome = document.getElementById('su-nome').value.trim();
+  const user = document.getElementById('su-user').value.trim().toLowerCase();
+  const pass = document.getElementById('su-pass').value;
+  const bases = Array.from(document.querySelectorAll('.su-base:checked')).map(c=>c.value);
+  const errEl = document.getElementById('su-err'); errEl.style.display='none';
+  const okEl = document.getElementById('su-ok'); okEl.style.display='none';
+
+  if(!nome || !user || !pass || bases.length===0){
+    errEl.textContent = 'Preenche nome, usuário, senha e pelo menos uma base.';
+    errEl.style.display='block'; return;
+  }
+  const email = user + FAKE_EMAIL_DOMAIN;
+  const { data, error } = await sb.auth.signUp({ email, password: pass });
+  if(error){
+    errEl.textContent = 'Erro ao criar cadastro: ' + error.message;
+    errEl.style.display='block'; return;
+  }
+  const userId = data.user ? data.user.id : (data.session ? data.session.user.id : null);
+  if(userId){
+    const rows = bases.map(b => ({ user_id: userId, base: b, nome_exibicao: nome }));
+    const { error: linkErr } = await sb.from('rv_supervisora_bases').insert(rows);
+    if(linkErr){
+      errEl.textContent = 'Cadastro criado, mas houve erro ao vincular bases: ' + linkErr.message;
+      errEl.style.display='block'; return;
+    }
+  }
+  okEl.textContent = 'Cadastro criado! Pode fazer login agora.';
+  okEl.style.display='block';
+  ['su-nome','su-user','su-pass'].forEach(id=>document.getElementById(id).value='');
+  document.querySelectorAll('.su-base').forEach(c=>c.checked=false);
+});
+
+document.getElementById('lg-submit').addEventListener('click', async ()=>{
+  const user = document.getElementById('lg-user').value.trim().toLowerCase();
+  const pass = document.getElementById('lg-pass').value;
+  const errEl = document.getElementById('lg-err'); errEl.style.display='none';
+  const email = user + FAKE_EMAIL_DOMAIN;
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if(error){
+    errEl.textContent = 'Usuário ou senha incorretos.';
+    errEl.style.display='block'; return;
+  }
+  await afterLogin(data.session);
+});
+
+document.getElementById('ger-logout').addEventListener('click', async ()=>{
+  await sb.auth.signOut();
+  currentSession = null; minhasBases = [];
+  document.getElementById('ger-panel-wrap').style.display='none';
+  document.getElementById('ger-login-wrap').style.display='flex';
+});
+
+async function afterLogin(session){
+  currentSession = session;
+  const { data: bases, error } = await sb.from('rv_supervisora_bases').select('base, nome_exibicao').eq('user_id', session.user.id);
+  if(error || !bases || bases.length===0){
+    document.getElementById('lg-err').textContent = 'Login ok, mas essa conta não está vinculada a nenhuma base ainda.';
+    document.getElementById('lg-err').style.display='block';
+    return;
+  }
+  minhasBases = bases.map(b=>b.base);
+  const nomeExibicao = bases[0].nome_exibicao || session.user.email.split('@')[0];
+  document.getElementById('ger-user-label').textContent = nomeExibicao;
+  const sel = document.getElementById('base-ativa');
+  sel.innerHTML = minhasBases.map(b=>'<option value="'+b+'">'+b+'</option>').join('');
+  document.getElementById('ger-login-wrap').style.display='none';
+  document.getElementById('ger-panel-wrap').style.display='block';
+  await refreshAllPanels();
+}
+
+async function refreshAllPanels(){
+  await renderColab();
+  await renderAlocFuncSelect();
+  await renderArmazemTable();
+  await renderWlpTable();
+  await carregarConfigProdutividade();
+  await populatePontosFuncSelects();
+  await loadPontosConfig();
+  await renderAbsenteeismo();
+  await renderDestaques();
+  await renderOcorrencias('seguranca');
+  await renderOcorrencias('conduta');
+  await renderQuantidade('relatoseg');
+  await renderQuantidade('pontoaberto');
+  await renderRanking();
+  await renderCorrida();
+  await renderResultadosMatriz();
+  await renderJornadaTable();
+}
+
+document.getElementById('base-ativa').addEventListener('change', refreshAllPanels);
+
+// ---------- CADASTRO DE FUNCIONÁRIOS (por base, no Supabase) ----------
+let editingFuncId = null;
+
+async function renderColab(){
+  const base = document.getElementById('base-ativa').value;
+  const { data, error } = await sb.from('rv_funcionarios').select('*').eq('base', base).order('nome');
+  if(error){ toast('Erro ao carregar funcionários: ' + error.message); return; }
+  const rows = (data||[]).map(f=>{
+    return '<tr><td>'+f.nome+'</td><td>'+f.cpf+'</td><td>'+f.nascimento+'</td><td>'+(f.funcao||'—')+'</td><td>'+(f.turno||'—')+'</td>' +
+      '<td style="font-size:11px;color:var(--text-secondary)">'+((f.apelidos||[]).join(', ')||'—')+'</td>' +
+      '<td style="white-space:nowrap"><button class="btn" data-edit="'+f.id+'" style="font-size:11px;padding:4px 8px;margin-right:4px">editar</button>' +
+      '<button class="btn" data-del="'+f.id+'" style="font-size:11px;padding:4px 8px">remover</button></td></tr>';
+  }).join('');
+  document.getElementById('colab-table').innerHTML =
+    '<thead><tr><th>nome</th><th>cpf</th><th>nascimento</th><th>função</th><th>turno</th><th>apelidos</th><th></th></tr></thead><tbody>'+rows+'</tbody>';
+  document.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      if(!confirm('Remover este funcionário? Isso não apaga os resultados já importados, mas ele some do cadastro.')) return;
+      const { error } = await sb.from('rv_funcionarios').delete().eq('id', btn.dataset.del);
+      if(error) toast('Erro ao remover: '+error.message); else { toast('Removido.'); if(editingFuncId===btn.dataset.del) cancelEditFunc(); renderColab(); }
+    });
+  });
+  document.querySelectorAll('[data-edit]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const { data: f } = await sb.from('rv_funcionarios').select('*').eq('id', btn.dataset.edit).limit(1);
+      if(!f || f.length===0) return;
+      const func = f[0];
+      editingFuncId = func.id;
+      document.getElementById('nf-nome').value = func.nome;
+      document.getElementById('nf-cpf').value = func.cpf;
+      document.getElementById('nf-nasc').value = func.nascimento;
+      document.getElementById('nf-funcao').value = func.funcao || '';
+      document.getElementById('nf-turno').value = func.turno || 'C';
+      document.getElementById('nf-apelidos').value = (func.apelidos||[]).join(', ');
+      document.getElementById('nf-form-title').textContent = 'Editando: '+func.nome;
+      document.getElementById('nf-add').textContent = 'Salvar edição';
+      document.getElementById('nf-cancel').style.display = 'inline-block';
+      document.getElementById('nf-nome').scrollIntoView({behavior:'smooth', block:'center'});
+    });
+  });
+}
+
+function cancelEditFunc(){
+  editingFuncId = null;
+  ['nf-nome','nf-cpf','nf-nasc','nf-funcao','nf-apelidos'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nf-form-title').textContent = 'Novo funcionário';
+  document.getElementById('nf-add').textContent = 'Adicionar';
+  document.getElementById('nf-cancel').style.display = 'none';
+}
+document.getElementById('nf-cancel').addEventListener('click', cancelEditFunc);
+
+document.getElementById('nf-add').addEventListener('click', async ()=>{
+  const base = document.getElementById('base-ativa').value;
+  const nome = document.getElementById('nf-nome').value.trim();
+  const cpf = document.getElementById('nf-cpf').value.trim();
+  const nascimento = document.getElementById('nf-nasc').value.trim();
+  const funcao = document.getElementById('nf-funcao').value.trim() || 'Não informada';
+  const turno = document.getElementById('nf-turno').value;
+  const apelidos = document.getElementById('nf-apelidos').value.split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+  if(!nome || !cpf || !nascimento){ toast('Preenche nome, CPF e nascimento.'); return; }
+
+  if(editingFuncId!==null){
+    const { error } = await sb.from('rv_funcionarios').update({ nome, cpf, nascimento, funcao, turno, apelidos }).eq('id', editingFuncId);
+    if(error){ toast('Erro ao salvar edição: '+error.message); return; }
+    toast('Funcionário atualizado.');
+    cancelEditFunc();
+  } else {
+    const { error } = await sb.from('rv_funcionarios').insert([{ nome, cpf, nascimento, funcao, turno, base, apelidos }]);
+    if(error){ toast('Erro ao salvar: '+error.message); return; }
+    ['nf-nome','nf-cpf','nf-nasc','nf-funcao','nf-apelidos'].forEach(id=>document.getElementById(id).value='');
+    toast('Funcionário adicionado.');
+  }
+  renderColab();
+});
+
+// ---------- IMPORTAÇÃO EM MASSA DE FUNCIONÁRIOS ----------
+function normalizeBase(raw){
+  const n = normalizeName(raw);
+  if(n.indexOf('LAGOA')>=0) return 'Lagoa da Prata';
+  if(n.indexOf('PARA DE MINAS')>=0 || n.indexOf('PARÁ')>=0) return 'Pará de Minas';
+  if(n.indexOf('ABAETE')>=0 || n.indexOf('ABAETÉ')>=0) return 'Abaeté';
+  return null;
+}
+function excelDateToDDMMYYYY(v){
+  if(v instanceof Date) return String(v.getUTCDate()).padStart(2,'0')+'/'+String(v.getUTCMonth()+1).padStart(2,'0')+'/'+v.getUTCFullYear();
+  if(typeof v === 'string') return v;
+  return '';
+}
+
+document.getElementById('bulk-import').addEventListener('click', async ()=>{
+  const file = document.getElementById('bulk-file').files[0];
+  const statusEl = document.getElementById('bulk-status');
+  if(!file){ statusEl.textContent = 'Escolha um arquivo primeiro.'; return; }
+  statusEl.textContent = 'Lendo planilha...';
+  try{
+    const wb = await readWorkbook(file);
+    const firstSheet = wb.SheetNames[0];
+    const rows = sheetRows(wb, firstSheet);
+    if(!rows || rows.length<2){ statusEl.textContent = 'Planilha vazia ou sem dados.'; return; }
+
+    let inseridos=0, atualizados=0, ignorados=0, semBase=0;
+    for(let i=1;i<rows.length;i++){
+      const r = rows[i];
+      if(!r || !r[1]) continue; // sem nome
+      const filialRaw = r[0], nome = r[1], cargo = r[2], cpf = r[3], nascRaw = r[4];
+      const base = normalizeBase(filialRaw);
+      if(!base){ semBase++; continue; }
+      const nascimento = excelDateToDDMMYYYY(nascRaw);
+      const cpfStr = String(cpf||'').trim();
+      if(!nome || !cpfStr){ ignorados++; continue; }
+
+      const { data: existing } = await sb.from('rv_funcionarios').select('id').eq('cpf', cpfStr).limit(1);
+      if(existing && existing.length>0){
+        await sb.from('rv_funcionarios').update({ nome, nascimento, funcao:cargo||'Não informada', base }).eq('id', existing[0].id);
+        atualizados++;
+      } else {
+        await sb.from('rv_funcionarios').insert([{ nome, cpf:cpfStr, nascimento, funcao:cargo||'Não informada', turno:null, base, apelidos:[] }]);
+        inseridos++;
+      }
+    }
+    statusEl.textContent = inseridos+' cadastrados, '+atualizados+' atualizados, '+ignorados+' ignorados (sem nome/CPF), '+semBase+' sem base reconhecida.';
+    toast('Importação em massa concluída.');
+    renderColab();
+  }catch(e){
+    statusEl.textContent = 'Erro ao importar: ' + e.message;
+  }
+});
+
+
+document.getElementById('app-submit').addEventListener('click', async ()=>{
+  const cpf = document.getElementById('app-cpf').value.trim();
+  const nasc = document.getElementById('app-nasc').value.trim();
+  const errEl = document.getElementById('app-err'); errEl.style.display='none';
+  const { data, error } = await sb.from('rv_funcionarios').select('*').eq('cpf', cpf).eq('nascimento', nasc).limit(1);
+  if(error || !data || data.length===0){
+    errEl.textContent = 'CPF ou data de nascimento não encontrados.';
+    errEl.style.display='block'; return;
+  }
+  const f = data[0];
+  document.getElementById('ap-nome').textContent = f.nome;
+  document.getElementById('ap-funcao-base').textContent = (f.funcao||'Colaborador')+' · '+f.base;
+  document.getElementById('ap-cpf-label').textContent = f.cpf+' · '+(f.funcao||'');
+  document.getElementById('app-login-wrap').style.display='none';
+  document.getElementById('app-profile-wrap').style.display='block';
+  currentColaboradorId = f.id;
+  currentColaborador = f;
+  await carregarWlpColaborador();
+  await carregarVariaveisColaborador();
+  await carregarDashboardAjudante();
+});
+document.getElementById('ap-wlp-mes').addEventListener('change', ()=>{ carregarWlpColaborador(); carregarVariaveisColaborador(); carregarDashboardAjudante(); });
+let currentColaboradorId = null;
+let currentColaborador = null;
+
+function diasNoMes(mes){
+  const [y,m] = mes.split('-').map(Number);
+  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+}
+
+let diaSelecionadoAjudante = null;
+
+async function carregarDashboardAjudante(){
+  if(!currentColaborador) return;
+  const mes = document.getElementById('ap-wlp-mes').value;
+  diaSelecionadoAjudante = null;
+  let detalheAbertoTipo = null;
+  const { data: indiv } = await sb.from('rv_resultados_individuais').select('*').eq('funcionario_id', currentColaborador.id).eq('mes', mes).in('indicador', ['eficiencia_montagem','ociosidade','erro_carregamento_individual','produtividade']);
+  const eff = (indiv||[]).find(r=>r.indicador==='eficiencia_montagem');
+  const isAjudante = !!eff;
+  document.getElementById('ap-ajudante-dashboard').style.display = isAjudante ? 'block' : 'none';
+  document.getElementById('ap-generico-wrap').style.display = isAjudante ? 'none' : 'block';
+  if(!isAjudante) return;
+
+  const ocio = (indiv||[]).find(r=>r.indicador==='ociosidade');
+  const erro = (indiv||[]).find(r=>r.indicador==='erro_carregamento_individual');
+  const prod = (indiv||[]).find(r=>r.indicador==='produtividade');
+
+  const { data: metasRows } = await sb.from('rv_indicadores_armazem').select('*').eq('base', currentColaborador.base).eq('mes', mes)
+    .in('nome', ['Eficiência de Montagem (Ajudante)','Ociosidade (Ajudante)','Erro de Carregamento Individual (Ajudante)','Produtividade (Ajudante)']);
+  const metaDe = nome => (metasRows||[]).find(m=>m.nome===nome) || {meta:0, valor:0};
+  const mEff = metaDe('Eficiência de Montagem (Ajudante)');
+  const mOcio = metaDe('Ociosidade (Ajudante)');
+  const mErro = metaDe('Erro de Carregamento Individual (Ajudante)');
+
+  const valorPontoAtual = await getValorPonto();
+
+  const { data: diariosRaw } = await sb.from('rv_resultados_diarios').select('*').eq('funcionario_id', currentColaborador.id).eq('mes', mes);
+  const diasData = {}; // dia -> {produtividade, paletes, eficientes, esforco, jornada, jornadaBruta, mapas, errosCarregamento}
+  (diariosRaw||[]).forEach(r=>{
+    diasData[r.dia] = diasData[r.dia] || {};
+    const map = {produtividade_dia:'produtividade', paletes_dia:'paletes', eficientes_dia:'eficientes', esforco_dia:'esforco', jornada_dia:'jornada', jornada_bruta_dia:'jornadaBruta', mapas_dia:'mapas', erros_carregamento_dia:'errosCarregamento'};
+    if(map[r.indicador]) diasData[r.dia][map[r.indicador]] = r.resultado;
+  });
+  const diasComDado = Object.keys(diasData).map(Number).sort((a,b)=>a-b);
+  const totalDiasUteis = diasComDado.length;
+  const totalDiasCalendario = diasNoMes(mes);
+  document.getElementById('ap-sem-dados-diarios').style.display = totalDiasUteis===0 ? 'block' : 'none';
+
+  const { data: paletesNok } = await sb.from('rv_paletes_nok').select('*').eq('funcionario_id', currentColaborador.id).eq('mes', mes);
+  const { data: errosMontagemDet } = await sb.from('rv_erros_montagem_detalhe').select('*').eq('funcionario_id', currentColaborador.id).eq('mes', mes);
+  const { data: errosCarregDet } = await sb.from('rv_erros_carregamento_detalhe').select('*').eq('funcionario_id', currentColaborador.id).eq('mes', mes);
+
+  const [anoStr, mesStr] = mes.split('-');
+  const nomesMeses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  document.getElementById('ap-periodo-mes').textContent = nomesMeses[parseInt(mesStr,10)-1]+'/'+anoStr;
+  document.getElementById('ap-periodo-dutil').textContent = totalDiasUteis;
+
+  function statusIndicador(resultado, meta, melhorMaior){
+    if(resultado===null||resultado===undefined) return null;
+    return melhorMaior ? resultado>=meta : resultado<=meta;
+  }
+
+  function tabela(headers, rows){
+    if(!rows.length) return '<div style="color:var(--e-text-muted);padding:6px 0">Nenhum registro.</div>';
+    const th = headers.map(h=>'<th style="text-align:left;padding:3px 6px;font-size:9.5px;color:var(--e-text-sec)">'+h+'</th>').join('');
+    const trs = rows.map(r=>'<tr>'+r.map(c=>'<td style="padding:3px 6px;border-top:1px solid var(--e-border)">'+c+'</td>').join('')+'</tr>').join('');
+    return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:10.5px"><thead><tr>'+th+'</tr></thead><tbody>'+trs+'</tbody></table></div>';
+  }
+
+  function detalheHtml(tipo, dia){
+    const filtroLabel = dia!==null ? 'Dia '+String(dia).padStart(2,'0') : 'Mês inteiro';
+
+    if(tipo==='eficiencia'){
+      const lista = (paletesNok||[]).filter(p=>dia===null || p.dia===dia);
+      const totPaletes = dia!==null ? (diasData[dia]?diasData[dia].paletes||0:0) : diasComDado.reduce((s,d)=>s+(diasData[d].paletes||0),0);
+      return '<div style="margin-bottom:6px;font-weight:600">'+filtroLabel+' — '+totPaletes+' paletes montados, '+lista.length+' não eficientes</div>' +
+        tabela(['Mapa','Palete','Início','Fim','Previsto','Realizado'], lista.map(p=>[p.mapa,p.palete,p.inicio||'—',p.fim||'—',minToClock((p.previsto_seg||0)/60),minToClock((p.realizado_seg||0)/60)]));
+    }
+    if(tipo==='ociosidade'){
+      const diasFiltrados = dia!==null ? [dia] : diasComDado;
+      let esforco=0, bruta=0, liquida=0;
+      diasFiltrados.forEach(d=>{ const x=diasData[d]||{}; esforco+=x.esforco||0; bruta+=x.jornadaBruta||0; liquida+=x.jornada||0; });
+      const jantaCafe = Math.max(0, bruta-liquida);
+      const ocioso = Math.max(0, liquida-esforco);
+      return '<div style="margin-bottom:6px;font-weight:600">'+filtroLabel+'</div>' +
+        '<div style="display:flex;justify-content:space-between;padding:2px 0"><span>Tempo montando paletes</span><b>'+minToClock(esforco/60)+'</b></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:2px 0"><span>Tempo de janta e café (previsto: 01:15)</span><b>'+minToClock(jantaCafe/60)+'</b></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:2px 0"><span>Tempo da jornada prevista</span><b>'+minToClock(liquida/60)+'</b></div>' +
+        '<div style="display:flex;justify-content:space-between;padding:2px 0;border-top:1px solid var(--e-border);margin-top:4px"><span>Tempo que ficou ocioso</span><b style="color:var(--e-red)">'+minToClock(ocioso/60)+'</b></div>';
+    }
+    if(tipo==='erro'){
+      const lista = (errosCarregDet||[]).filter(e=>dia===null || e.dia===dia);
+      const diasFiltrados = dia!==null ? [dia] : diasComDado;
+      const totMapas = diasFiltrados.reduce((s,d)=>s+((diasData[d]||{}).mapas||0),0);
+      return '<div style="margin-bottom:6px;font-weight:600">'+filtroLabel+' — '+lista.length+' erro(s) em '+totMapas+' mapa(s) montado(s)</div>' +
+        tabela(['Produto','Descrição','Quantidade'], lista.map(e=>[e.produto||'—',e.descricao||'—',e.quantidade]));
+    }
+    if(tipo==='produtividade'){
+      const diasFiltrados = dia!==null ? [dia] : diasComDado;
+      const totPaletes = diasFiltrados.reduce((s,d)=>s+((diasData[d]||{}).paletes||0),0);
+      const listaErros = (errosMontagemDet||[]).filter(e=>dia===null || e.dia===dia);
+      return '<div style="margin-bottom:6px;font-weight:600">'+filtroLabel+' — '+totPaletes+' paletes montados</div>' +
+        '<div style="font-weight:500;margin:6px 0 2px">Débitos (erros de montagem)</div>' +
+        tabela(['Código do item','Motivo','Qtd incorreta'], listaErros.map(e=>[e.codigo_item||'—',e.motivo||'—',e.quantidade_incorreta]));
+    }
+  }
+
+  function card(id, nome, resultado, meta, ok, unidade, valorPago, melhorMaior, tipoDetalhe){
+    const dispRes = resultado===null||resultado===undefined ? '—' : (unidade==='%' ? fmt(resultado,1)+'%' : Math.round(resultado).toLocaleString('pt-BR')+' pts');
+    const dispMeta = unidade==='%' ? ((melhorMaior?'≥ ':'≤ ')+fmt(meta,0)+'%') : 'sem teto';
+    return '<div class="emp-card" style="text-align:center;padding:12px;cursor:'+(tipoDetalhe?'pointer':'default')+'" data-ind-card="'+id+'">' +
+      '<div style="font-size:11px;color:var(--e-text-sec)">'+nome+'</div>' +
+      '<div style="font-size:10px;color:var(--e-text-sec);margin-top:2px">Meta: '+dispMeta+'</div>' +
+      '<div style="font-size:20px;font-weight:600;margin-top:6px">'+dispRes+'</div>' +
+      '<div style="font-size:11px;font-weight:600;margin-top:4px;color:'+(ok===null?'var(--e-text-sec)':ok?'var(--e-green)':'var(--e-red)')+'">'+(ok===null?'—':ok?'OK':'NOK')+'</div>' +
+      '<div style="font-size:10px;color:var(--e-text-sec);margin-top:4px">Recebendo <b>'+brl(valorPago)+'</b></div>' +
+      (tipoDetalhe ? '<div id="ap-detalhe-'+id+'" style="display:none;margin-top:8px;padding-top:8px;border-top:1px dashed var(--e-border);font-size:10.5px;color:var(--e-text-sec)"></div>' : '') +
+    '</div>';
+  }
+
+  function render(){
+    const okEff = statusIndicador(eff?eff.resultado:null, mEff.meta, true);
+    const okOcio = statusIndicador(ocio?ocio.resultado:null, mOcio.meta, false);
+    const okErro = statusIndicador(erro?erro.resultado:null, mErro.meta, false);
+    const valorEff = okEff ? (mEff.valor||0) : 0;
+    const valorOcio = okOcio ? (mOcio.valor||0) : 0;
+    const valorErro = okErro ? (mErro.valor||0) : 0;
+    const fixos = valorEff + valorOcio + valorErro;
+    const produtividadeMes = diasComDado.reduce((s,d)=>s+(diasData[d].produtividade||0),0);
+    const valorProdutividade = produtividadeMes * valorPontoAtual;
+
+    document.getElementById('ap-rv-parcial').textContent = brl(fixos + valorProdutividade);
+    const avisoEl = document.getElementById('ap-dia-selecionado-aviso');
+    if(diaSelecionadoAjudante!==null){
+      const dd = diasData[diaSelecionadoAjudante] || {};
+      const effDia = dd.paletes>0 ? (dd.eficientes/dd.paletes*100) : null;
+      const ocioDia = dd.jornada>0 ? (100 - (dd.esforco||0)/dd.jornada*100) : null;
+      avisoEl.style.display = 'block';
+      avisoEl.innerHTML = 'Mostrando o detalhe do dia '+String(diaSelecionadoAjudante).padStart(2,'0')+
+        ' — Eficiência do dia: <b>'+(effDia!==null?fmt(effDia,1)+'%':'—')+'</b> · Ociosidade do dia: <b>'+(ocioDia!==null?fmt(ocioDia,1)+'%':'—')+'</b>' +
+        ' <span style="font-weight:400;color:var(--e-text-sec)">(clique de novo no dia pra voltar pro mês inteiro)</span>';
+    } else {
+      avisoEl.style.display = 'none';
+    }
+
+    document.getElementById('ap-indicadores-grid').innerHTML =
+      card('eficiencia','Eficiência de montagem', eff?eff.resultado:null, mEff.meta, okEff, '%', valorEff, true, 'eficiencia') +
+      card('ociosidade','Ociosidade', ocio?ocio.resultado:null, mOcio.meta, okOcio, '%', valorOcio, false, 'ociosidade') +
+      card('erro','Erro de carregamento', erro?erro.resultado:null, mErro.meta, okErro, '%', valorErro, false, 'erro') +
+      card('produtividade','Produtividade', produtividadeMes, null, true, 'pts', valorProdutividade, true, 'produtividade');
+
+    document.getElementById('ap-resumo-grid').innerHTML =
+      '<div class="emp-card" style="padding:10px;text-align:center"><div style="font-size:10px;color:var(--e-text-sec)">Dias trabalhados</div><div style="font-size:16px;font-weight:600">'+totalDiasUteis+'</div></div>' +
+      '<div class="emp-card" style="padding:10px;text-align:center"><div style="font-size:10px;color:var(--e-text-sec)">Pontos no mês</div><div style="font-size:16px;font-weight:600">'+Math.round(produtividadeMes).toLocaleString('pt-BR')+'</div></div>' +
+      '<div class="emp-card" style="padding:10px;text-align:center"><div style="font-size:10px;color:var(--e-text-sec)">Valor produtividade</div><div style="font-size:16px;font-weight:600">'+brl(valorProdutividade)+'</div></div>' +
+      '<div class="emp-card" style="padding:10px;text-align:center"><div style="font-size:10px;color:var(--e-text-sec)">RV total do mês</div><div style="font-size:16px;font-weight:600">'+brl(fixos + valorProdutividade)+'</div></div>';
+
+    ['eficiencia','ociosidade','erro','produtividade'].forEach(tipo=>{
+      document.querySelector('[data-ind-card="'+tipo+'"]').addEventListener('click', ()=>{
+        detalheAbertoTipo = (detalheAbertoTipo===tipo) ? null : tipo;
+        aplicarDetalheAberto();
+      });
+    });
+    aplicarDetalheAberto();
+
+    renderCalendario();
+  }
+
+  function aplicarDetalheAberto(){
+    document.querySelectorAll('[id^="ap-detalhe-"]').forEach(d=>d.style.display='none');
+    if(detalheAbertoTipo){
+      const det = document.getElementById('ap-detalhe-'+detalheAbertoTipo);
+      if(det){ det.innerHTML = detalheHtml(detalheAbertoTipo, diaSelecionadoAjudante); det.style.display='block'; }
+    }
+  }
+
+  function renderCalendario(){
+    const cal = [];
+    for(let d=1; d<=totalDiasCalendario; d++){
+      const registro = diasData[d];
+      const valorDia = registro ? (registro.produtividade||0)*valorPontoAtual : null;
+      const selecionado = d===diaSelecionadoAjudante;
+      cal.push('<div class="emp-card" data-cal-dia="'+d+'" style="padding:8px 4px;text-align:center;cursor:'+(registro?'pointer':'default')+';'+(selecionado?'border:2px solid var(--e-navy);':(registro?'background:#e4f6ec;':''))+'"><div style="font-size:10px;color:var(--e-text-sec)">'+String(d).padStart(2,'0')+'</div><div style="font-size:11px;font-weight:600;margin-top:2px">'+(valorDia!==null?brl(valorDia):'-')+'</div></div>');
+    }
+    document.getElementById('ap-calendario').innerHTML = cal.join('');
+    document.querySelectorAll('[data-cal-dia]').forEach(el=>{
+      const d = parseInt(el.dataset.calDia,10);
+      if(!diasData[d]) return;
+      el.addEventListener('click', ()=>{
+        diaSelecionadoAjudante = (diaSelecionadoAjudante===d) ? null : d;
+        render();
+      });
+    });
+  }
+
+  render();
+}
+
+async function carregarVariaveisColaborador(){
+  if(!currentColaborador) return;
+  const mes = document.getElementById('ap-wlp-mes').value;
+  const cont = document.getElementById('ap-variaveis');
+  const { data: aloc } = await sb.from('rv_alocacoes').select('*').eq('funcionario_id', currentColaborador.id).eq('mes', mes).limit(1);
+  if(!aloc || aloc.length===0 || !aloc[0].variaveis || aloc[0].variaveis.length===0){
+    document.getElementById('ap-total-valor').textContent = '—';
+    document.getElementById('ap-total-sub').textContent = 'nenhuma variável alocada para este mês ainda';
+    cont.innerHTML = '';
+    return;
+  }
+  const catalog = await getCatalogo(currentColaborador.base, mes);
+  const valorPontoAtual = await getValorPonto();
+  let total = 0, ok=0, cntTotal=0;
+  const cards = [];
+  for(const vid of aloc[0].variaveis){
+    const v = catalog.find(c=>c.id===vid);
+    if(!v) continue;
+    const res = await resolveVariavel(v, currentColaborador.id, mes);
+    if(!res){
+      cards.push('<div class="ap-var-card"><div class="nome">'+v.nome+'</div><div class="row2"><span>sem dado ainda</span></div></div>');
+      continue;
+    }
+    const pct = pctAtingimento(res, v.melhorMaior);
+    const bateu = v.informativo ? true : pct>=100-0.001;
+    const pago = calcularValorPago(v, res, valorPontoAtual);
+    total += pago;
+    if(!v.informativo){ cntTotal++; if(bateu) ok++; }
+    cards.push('<div class="ap-var-card"><div class="nome">'+v.nome+'</div>' +
+      '<div class="row2"><span>Resultado: <b style="color:var(--e-text)">'+formatResultado(res)+'</b> · meta '+formatMeta(res)+'</span>' +
+      (v.informativo?'':'<span class="badge '+(bateu?'ok':'fail')+'">'+(bateu?'OK':'NOK')+'</span>')+'</div>' +
+      '<div class="valor">'+(pago?brl(pago):'—')+'</div></div>');
+  }
+  cont.innerHTML = cards.join('');
+  document.getElementById('ap-total-valor').textContent = brl(total);
+  document.getElementById('ap-total-sub').textContent = cntTotal>0 ? (ok+' de '+cntTotal+' variáveis batidas') : 'variáveis informativas';
+}
+
+async function carregarWlpColaborador(){
+  if(!currentColaboradorId) return;
+  const mes = document.getElementById('ap-wlp-mes').value;
+  const { data } = await sb.from('rv_resultados_individuais').select('*').eq('funcionario_id', currentColaboradorId).eq('mes', mes).in('indicador', ['wlp','wlp_horas_extras']);
+  const wlp = (data||[]).find(r=>r.indicador==='wlp');
+  const he = (data||[]).find(r=>r.indicador==='wlp_horas_extras');
+  const alvos = [
+    {val:document.getElementById('ap-wlp-valor'), sub:document.getElementById('ap-wlp-sub')},
+    {val:document.getElementById('ap-wlp-valor-ajudante'), sub:document.getElementById('ap-wlp-sub-ajudante')}
+  ];
+  alvos.forEach(({val,sub})=>{
+    if(!val) return;
+    if(!wlp){
+      val.textContent = '—';
+      val.style.color = 'var(--e-text)';
+      sub.textContent = 'sem dado de WLP ainda';
+      return;
+    }
+    val.textContent = fmt(wlp.resultado,2);
+    val.style.color = wlp.resultado>=0 ? 'var(--e-green)' : 'var(--e-red)';
+    sub.textContent = 'horas extras: '+fmt(he?he.resultado:0,2)+'h';
+  });
+}
+document.getElementById('app-logout').addEventListener('click', ()=>{
+  document.getElementById('app-profile-wrap').style.display='none';
+  document.getElementById('app-login-wrap').style.display='flex';
+  document.getElementById('app-cpf').value=''; document.getElementById('app-nasc').value='';
+  currentColaboradorId = null;
+  currentColaborador = null;
+});
+
+
+// ======================================================================
+// HELPERS GERAIS
+// ======================================================================
+function normalizeName(s){
+  if(!s) return '';
+  return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim().replace(/\s+/g,' ');
+}
+function fmt(v,d){ if(d===undefined)d=1; if(v===null||v===undefined||isNaN(v)) return '—'; return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function brl(v){ if(v===null||v===undefined||isNaN(v)) v=0; return Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function minToClock(totalMin){
+  if(totalMin===null||totalMin===undefined||isNaN(totalMin)) return '--:--';
+  const totalSec = Math.round(totalMin*60);
+  const h = Math.floor(totalSec/3600), m = Math.floor((totalSec%3600)/60), s = totalSec%60;
+  return h>0 ? (String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')) : (String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'));
+}
+function excelTimeParts(dateObj){
+  // Ao converter horários "puros" do Excel (ancorados em 1899-12-30), o navegador constrói o Date usando
+  // o fuso horário LOCAL da máquina — e para datas antigas (antes de 1914 no Brasil), esse fuso histórico
+  // era um deslocamento estranho (ex: UTC-3:06:28 em vez de UTC-3:00:00), o que desloca o horário lido.
+  // Corrigimos usando o próprio deslocamento que o navegador aplicou para essa data específica.
+  if(!(dateObj instanceof Date)) return null;
+  const offsetSec = Math.round(dateObj.getTimezoneOffset()*60); // segundos: UTC - local, nesta data específica
+  let totalSec = dateObj.getUTCHours()*3600 + dateObj.getUTCMinutes()*60 + dateObj.getUTCSeconds() - offsetSec;
+  totalSec = ((totalSec % 86400) + 86400) % 86400;
+  return { h: Math.floor(totalSec/3600), m: Math.floor((totalSec%3600)/60), s: totalSec%60 };
+}
+function timeToSeconds(v){
+  // aceita: Date (horário do Excel), número puro (fração do dia, ex: 0.5083 = 12:12:00) ou texto "hh:mm[:ss]"
+  if(v instanceof Date){
+    const p = excelTimeParts(v);
+    return p ? (p.h*3600+p.m*60+p.s) : null;
+  }
+  if(typeof v === 'number' && isFinite(v)){
+    // se vier maior que 1, pode ser data+hora junto (serial completo) — usa só a parte fracionária (o horário do dia)
+    const fracaoDia = v - Math.floor(v);
+    return Math.round(fracaoDia*86400);
+  }
+  if(typeof v === 'string'){
+    const m = v.trim().match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+    if(m) return (+m[1])*3600 + (+m[2])*60 + (m[3]?+m[3]:0);
+  }
+  return null;
+}
+function dateOnly(dateObj){
+  if(!(dateObj instanceof Date)) return null;
+  return new Date(Date.UTC(dateObj.getUTCFullYear(), dateObj.getUTCMonth(), dateObj.getUTCDate()));
+}
+function valorParaHoras(v){
+  // aceita: Date/time do Excel, string "hh:mm" ou "hh:mm:ss", número (já em horas), vazio/null
+  if(v===null || v===undefined || v==='') return 0;
+  if(v instanceof Date){
+    const p = excelTimeParts(v);
+    return p ? (p.h + p.m/60 + p.s/3600) : 0;
+  }
+  if(typeof v === 'string'){
+    const m = v.trim().match(/^(-?\d{1,3}):(\d{2})(?::(\d{2}))?$/);
+    if(m){
+      const sinal = m[1].startsWith('-') ? -1 : 1;
+      const h = Math.abs(parseInt(m[1],10));
+      return sinal*(h + (+m[2])/60 + (m[3]?(+m[3])/3600:0));
+    }
+    const n = parseFloat(v.replace(',','.'));
+    return isNaN(n) ? 0 : n;
+  }
+  if(typeof v === 'number') return v;
+  return 0;
+}
+function dateKey(d){
+  if(!d) return null;
+  return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+}
+function inSelectedMonth(dateObj, mesStr){
+  if(!(dateObj instanceof Date) || !mesStr) return false;
+  const [y,m] = mesStr.split('-').map(Number);
+  return dateObj.getUTCFullYear()===y && (dateObj.getUTCMonth()+1)===m;
+}
+function findSheetName(wb, target){
+  if(wb.SheetNames.indexOf(target)>=0) return target;
+  const norm = s => String(s).trim().toLowerCase().replace(/\s+/g,' ');
+  const alvo = norm(target);
+  return wb.SheetNames.find(n => norm(n)===alvo) || null;
+}
+function sheetRows(wb, name){
+  const actual = findSheetName(wb, name);
+  if(!actual) return null;
+  return XLSX.utils.sheet_to_json(wb.Sheets[actual], {header:1, defval:null, raw:true});
+}
+async function readWorkbook(file){
+  const buf = await file.arrayBuffer();
+  return XLSX.read(buf, {type:'array', cellDates:true});
+}
+async function readWorkbookRaw(file){
+  // sem cellDates: horários "puros" do Excel vêm como número (fração do dia), evitando o problema
+  // de fuso horário histórico que a conversão para Date introduz em valores ancorados em 1899-12-30
+  const buf = await file.arrayBuffer();
+  return XLSX.read(buf, {type:'array', cellDates:false});
+}
+
+function matchFuncionario(rawName, funcionarios){
+  const alvo = normalizeName(rawName);
+  if(!alvo) return null;
+  return funcionarios.find(f=>{
+    if(normalizeName(f.nome)===alvo) return true;
+    return (f.apelidos||[]).some(a=>normalizeName(a)===alvo);
+  }) || null;
+}
+
+// ======================================================================
+// IMPORTAÇÃO — PLANILHA 1 (ajudante de carregamento)
+// ======================================================================
+function parseDataHora(v){
+  if(v instanceof Date) return v;
+  if(typeof v === 'string'){
+    const m = v.match(/(\d{2})\/(\d{2})\/(\d{4})\s*-\s*(\d{2}):(\d{2}):(\d{2})/);
+    if(m) return new Date(Date.UTC(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]));
+  }
+  return null;
+}
+
+async function carregarConfigProdutividade(){
+  const { data } = await sb.from('rv_pontos_config').select('valor_ponto,penalidade_erro_montagem').eq('id',1).limit(1);
+  const c = (data && data[0]) || {};
+  document.getElementById('cfg-valor-ponto').value = c.valor_ponto ?? 0.000899991603576876;
+  document.getElementById('cfg-penalidade').value = c.penalidade_erro_montagem ?? 800;
+}
+document.getElementById('cfg-valor-ponto-salvar').addEventListener('click', async ()=>{
+  const valor_ponto = parseFloat(document.getElementById('cfg-valor-ponto').value)||0;
+  const penalidade_erro_montagem = parseFloat(document.getElementById('cfg-penalidade').value)||0;
+  await sb.from('rv_pontos_config').update({ valor_ponto, penalidade_erro_montagem }).eq('id',1);
+  toast('Valores salvos.');
+});
+
+async function processarPlanilhaAjudante(wb, mes, funcionarios, base){
+  const rowsTSP = sheetRows(wb, 'Tempo+Separacao+Palete');
+  const rowsErro = sheetRows(wb, 'Erro+Carregamento');
+  const rowsOcorr = sheetRows(wb, 'Ocorrências+Conferencia');
+  if(!rowsTSP) throw new Error('Aba "Tempo+Separacao+Palete" não encontrada na planilha 1.');
+
+  // colunas (novo layout): 0 Base,1 Nome Colaborador,2 Data de Entrega,3 Mapa,4 Palete,5 Região,
+  // 6 Usuário-código,7 Pontuação(previsto),8 Endereço,9 Início Palete,10 Fim Palete,11 Esforço,12 Status
+  const porNomeDia = {}; // nomeNormalizado -> dataKey -> {paletes, eficientes, pontosBrutos, esforco, mapas:Set}
+  const nomeOriginal = {};
+  const diaTotalRows = {}; // dataKey -> [{inicioDT, fimDT}] (todo mundo, pra jornada coletiva)
+  const paletesNokPorNome = {}; // nomeNormalizado -> [{dk, mapa, palete, inicio, fim, previsto, realizado}]
+
+  for(let i=1;i<rowsTSP.length;i++){
+    const r = rowsTSP[i];
+    if(!r) continue;
+    const nomeColab = r[1], dataEntrega = r[2], mapa = r[3], palete = r[4], pontuacao = r[7], inicioRaw = r[9], fimRaw = r[10], esforco = r[11];
+    if(!(dataEntrega instanceof Date) || !inSelectedMonth(dataEntrega, mes)) continue;
+    const dk = dateKey(dataEntrega);
+    const inicioDT = parseDataHora(inicioRaw), fimDT = parseDataHora(fimRaw);
+    (diaTotalRows[dk] = diaTotalRows[dk]||[]).push({inicioDT, fimDT});
+    if(!nomeColab) continue;
+    const key = normalizeName(nomeColab);
+    nomeOriginal[key] = nomeColab;
+    porNomeDia[key] = porNomeDia[key]||{};
+    const bucket = porNomeDia[key][dk] = porNomeDia[key][dk]||{paletes:0,eficientes:0,pontosBrutos:0,esforco:0,mapas:new Set()};
+    bucket.paletes++;
+    bucket.mapas.add(mapa);
+    if(pontuacao!==null && esforco!==null){
+      bucket.pontosBrutos += pontuacao;
+      bucket.esforco += esforco;
+      if(esforco <= pontuacao) bucket.eficientes++;
+      else {
+        (paletesNokPorNome[key] = paletesNokPorNome[key]||[]).push({
+          dk, mapa, palete,
+          inicio: inicioDT ? inicioDT.toISOString().substr(11,8) : null,
+          fim: fimDT ? fimDT.toISOString().substr(11,8) : null,
+          previsto: pontuacao, realizado: esforco
+        });
+      }
+    }
+  }
+
+  // jornada coletiva por dia: 21:30 na noite derivada do menor início, até o maior fim do grupo inteiro
+  const jornadaPorDia = {}; // dk -> {bruta, liquida, ultimoPalete: Date}
+  Object.keys(diaTotalRows).forEach(dk=>{
+    const items = diaTotalRows[dk];
+    let minInicio=null, maxFim=null;
+    items.forEach(it=>{
+      if(it.inicioDT && (!minInicio || it.inicioDT<minInicio)) minInicio = it.inicioDT;
+      if(it.fimDT && (!maxFim || it.fimDT>maxFim)) maxFim = it.fimDT;
+    });
+    if(!minInicio || !maxFim) return;
+    const hourUTC = minInicio.getUTCHours();
+    let nightDate = dateOnly(minInicio);
+    if(hourUTC < 12){ nightDate = new Date(nightDate.getTime() - 86400000); }
+    const start = new Date(Date.UTC(nightDate.getUTCFullYear(), nightDate.getUTCMonth(), nightDate.getUTCDate(), 21, 30, 0));
+    const brutaSec = (maxFim - start)/1000;
+    const liquidaSec = brutaSec < 6*3600 ? brutaSec : brutaSec - 75*60;
+    jornadaPorDia[dk] = { bruta:brutaSec, liquida:liquidaSec, ultimoPalete:maxFim };
+  });
+
+  // busca overrides já salvos (não sobrescrever ajuste manual da supervisora)
+  const { data: jornadaExistente } = await sb.from('rv_jornada_diaria').select('dia,override_segundos').eq('base', base).eq('mes', mes);
+  const overrideMap = {};
+  (jornadaExistente||[]).forEach(j=>{ if(j.override_segundos!==null && j.override_segundos!==undefined) overrideMap[j.dia] = j.override_segundos; });
+
+  // erro de carregamento — geral: por dia = Mapas c/erro (col H) ÷ Total de Mapas (col E);
+  // soma dos dias com registro, dividido pelo TOTAL de dias úteis do mês (vindo do Tempo+Separacao+Palete)
+  const errosPorNome = {};
+  const errosPorNomeDia = {}; // key -> dataKey -> count
+  const errosCarregDetalhePorNome = {}; // key -> dataKey -> [{produto, descricao, quantidade}]
+  const somaPctDiaErro = { valor:0 }; const diasVistos = new Set();
+  if(rowsErro){
+    for(let i=1;i<rowsErro.length;i++){
+      const r = rowsErro[i];
+      if(!r) continue;
+      const nomeCadastro = r[0], data = r[2], totalMapasDia = r[4], mapasComErroDia = r[7];
+      if(!(data instanceof Date) || !inSelectedMonth(data, mes)) continue;
+      const dk = dateKey(data);
+      if(!diasVistos.has(dk)){
+        diasVistos.add(dk);
+        if(totalMapasDia){ somaPctDiaErro.valor += (mapasComErroDia||0)/totalMapasDia*100; }
+      }
+      if(nomeCadastro){
+        const key = normalizeName(nomeCadastro);
+        errosPorNome[key] = (errosPorNome[key]||0)+1;
+        errosPorNomeDia[key] = errosPorNomeDia[key]||{};
+        errosPorNomeDia[key][dk] = (errosPorNomeDia[key][dk]||0)+1;
+        errosCarregDetalhePorNome[key] = errosCarregDetalhePorNome[key]||{};
+        (errosCarregDetalhePorNome[key][dk] = errosCarregDetalhePorNome[key][dk]||[]).push({produto:r[11], descricao:r[12], quantidade:r[13]});
+      }
+    }
+  }
+  const totalDiasUteis = Object.keys(diaTotalRows).length;
+  const erroCarregamentoGeral = totalDiasUteis>0 ? (somaPctDiaErro.valor/totalDiasUteis) : null;
+
+  // erros de montagem — Ocorrências+Conferencia: col0 Nome Cadastro, col1 Data, cada linha = 1 erro
+  const errosMontagemPorNomeDia = {};
+  const errosMontagemDetalhePorNome = {}; // key -> dataKey -> [{codigoItem, motivo, quantidadeIncorreta}]
+  if(rowsOcorr){
+    for(let i=1;i<rowsOcorr.length;i++){
+      const r = rowsOcorr[i];
+      if(!r) continue;
+      const nomeCadastro = r[0], data = r[1];
+      if(!nomeCadastro || !(data instanceof Date)) continue;
+      const key = normalizeName(nomeCadastro);
+      const dk = dateKey(data);
+      errosMontagemPorNomeDia[key] = errosMontagemPorNomeDia[key]||{};
+      errosMontagemPorNomeDia[key][dk] = (errosMontagemPorNomeDia[key][dk]||0)+1;
+      errosMontagemDetalhePorNome[key] = errosMontagemDetalhePorNome[key]||{};
+      (errosMontagemDetalhePorNome[key][dk] = errosMontagemDetalhePorNome[key][dk]||[]).push({codigoItem:r[5], motivo:r[9], quantidadeIncorreta:r[7]});
+    }
+  }
+
+  // agregados finais por funcionário
+  const { data: cfgRows } = await sb.from('rv_pontos_config').select('penalidade_erro_montagem').eq('id',1).limit(1);
+  const penalidadeErro = (cfgRows && cfgRows[0] && cfgRows[0].penalidade_erro_montagem) || 800; // pontos por erro de montagem
+  const resultadosIndiv = [];
+  const diagnostico = { totalNomes: Object.keys(porNomeDia).length, semMatchFuncionario: [], ok: [] };
+  const resultadosDiarios = []; // {funcionario_id, mes, dia, indicador:'produtividade_dia', resultado}
+  const paletesNokRows = []; // {funcionario_id, mes, dia, mapa, palete, inicio, fim, previsto_seg, realizado_seg}
+  const errosMontagemDetalheRows = []; // {funcionario_id, mes, dia, codigo_item, motivo, quantidade_incorreta}
+  const errosCarregamentoDetalheRows = []; // {funcionario_id, mes, dia, produto, descricao, quantidade}
+
+  Object.keys(porNomeDia).forEach(key=>{
+    const nomeRelatorio = nomeOriginal[key];
+    const func = matchFuncionario(nomeRelatorio, funcionarios);
+    if(!func){ diagnostico.semMatchFuncionario.push(nomeRelatorio); return; }
+    diagnostico.ok.push(nomeRelatorio+' → '+func.nome);
+    const dias = porNomeDia[key];
+    let paletesMes=0, eficientesMes=0, esforcoMes=0, jornadaLiqMes=0, pontosLiqMes=0;
+    const mapasTotal = new Set();
+    Object.keys(dias).forEach(dk=>{
+      const d = dias[dk];
+      paletesMes += d.paletes; eficientesMes += d.eficientes; esforcoMes += d.esforco;
+      d.mapas.forEach(m=>mapasTotal.add(m));
+      const erros = (errosMontagemPorNomeDia[key]||{})[dk] || 0;
+      const pontosLiqDia = d.pontosBrutos - erros*penalidadeErro;
+      pontosLiqMes += pontosLiqDia;
+      const diaNum = parseInt(dk.split('-')[2], 10);
+      resultadosDiarios.push({funcionario_id:func.id, mes, dia:diaNum, indicador:'produtividade_dia', resultado:pontosLiqDia});
+      resultadosDiarios.push({funcionario_id:func.id, mes, dia:diaNum, indicador:'paletes_dia', resultado:d.paletes});
+      resultadosDiarios.push({funcionario_id:func.id, mes, dia:diaNum, indicador:'eficientes_dia', resultado:d.eficientes});
+      resultadosDiarios.push({funcionario_id:func.id, mes, dia:diaNum, indicador:'esforco_dia', resultado:d.esforco});
+      resultadosDiarios.push({funcionario_id:func.id, mes, dia:diaNum, indicador:'mapas_dia', resultado:d.mapas.size});
+      const errosCarregDia = (errosPorNomeDia[key]||{})[dk] || 0;
+      resultadosDiarios.push({funcionario_id:func.id, mes, dia:diaNum, indicador:'erros_carregamento_dia', resultado:errosCarregDia});
+      const liquidaDoDia = overrideMap[dk]!==undefined ? overrideMap[dk] : (jornadaPorDia[dk] ? jornadaPorDia[dk].liquida : null);
+      if(liquidaDoDia){
+        jornadaLiqMes += liquidaDoDia;
+        resultadosDiarios.push({funcionario_id:func.id, mes, dia:diaNum, indicador:'jornada_dia', resultado:liquidaDoDia});
+      }
+      if(jornadaPorDia[dk]){
+        resultadosDiarios.push({funcionario_id:func.id, mes, dia:diaNum, indicador:'jornada_bruta_dia', resultado:jornadaPorDia[dk].bruta});
+      }
+      (paletesNokPorNome[key]||[]).filter(p=>p.dk===dk).forEach(p=>{
+        paletesNokRows.push({funcionario_id:func.id, mes, dia:diaNum, mapa:String(p.mapa), palete:String(p.palete), inicio:p.inicio, fim:p.fim, previsto_seg:p.previsto, realizado_seg:p.realizado});
+      });
+      ((errosMontagemDetalhePorNome[key]||{})[dk]||[]).forEach(e=>{
+        errosMontagemDetalheRows.push({funcionario_id:func.id, mes, dia:diaNum, codigo_item:String(e.codigoItem||''), motivo:String(e.motivo||''), quantidade_incorreta:e.quantidadeIncorreta||0});
+      });
+      ((errosCarregDetalhePorNome[key]||{})[dk]||[]).forEach(e=>{
+        errosCarregamentoDetalheRows.push({funcionario_id:func.id, mes, dia:diaNum, produto:String(e.produto||''), descricao:String(e.descricao||''), quantidade:e.quantidade||0});
+      });
+    });
+    const eff = paletesMes>0 ? (eficientesMes/paletesMes*100) : null;
+    const ociosidade = jornadaLiqMes>0 ? (100 - esforcoMes/jornadaLiqMes*100) : null;
+    const errosCarreg = errosPorNome[key] || 0;
+    const totalMapas = mapasTotal.size;
+    const pctErroIndiv = totalMapas>0 ? (errosCarreg/totalMapas*100) : null;
+
+    resultadosIndiv.push({funcionario_id:func.id, mes, indicador:'eficiencia_montagem', resultado:eff});
+    resultadosIndiv.push({funcionario_id:func.id, mes, indicador:'ociosidade', resultado:ociosidade});
+    resultadosIndiv.push({funcionario_id:func.id, mes, indicador:'erro_carregamento_individual', resultado:pctErroIndiv});
+    resultadosIndiv.push({funcionario_id:func.id, mes, indicador:'produtividade', resultado:pontosLiqMes});
+  });
+
+  // grava/atualiza a jornada diária (preservando overrides já existentes)
+  await Promise.all(Object.keys(jornadaPorDia).map(async dk=>{
+    const j = jornadaPorDia[dk];
+    const payload = {
+      base, mes, dia:dk,
+      ultimo_palete_horario: j.ultimoPalete.toISOString().substr(11,8),
+      jornada_bruta_segundos: j.bruta,
+      jornada_liquida_segundos: j.liquida
+    };
+    const { data: existing } = await sb.from('rv_jornada_diaria').select('id').eq('base',base).eq('mes',mes).eq('dia',dk).limit(1);
+    if(existing && existing.length>0) await sb.from('rv_jornada_diaria').update(payload).eq('id', existing[0].id);
+    else await sb.from('rv_jornada_diaria').insert([payload]);
+  }));
+
+  return { resultadosIndiv, erroCarregamentoGeral, diagnostico, resultadosDiarios, paletesNokRows, errosMontagemDetalheRows, errosCarregamentoDetalheRows };
+}
+
+// ======================================================================
+// IMPORTAÇÃO — PLANILHA 2 (indicadores gerais do armazém)
+// ======================================================================
+// ======================================================================
+// WLP — indicador informativo (não é variável de pagamento)
+// ======================================================================
+async function processarWLP(wb, mes, funcionarios){
+  const rowsVol = sheetRows(wb, 'Volume');
+  const rowsWlp = sheetRows(wb, 'WLP');
+  if(!rowsVol || !rowsWlp) return { resultados:[], baseWLP:null, diasComVolume:0, somaVolume:0 };
+
+  // aba Volume: procura a linha com rótulo "Hl" (valores) e a linha com rótulo "Data" (datas),
+  // sem supor a posição da coluna (a aba pode começar em B, C, etc. dependendo do arquivo)
+  let linhaHl=null, linhaData=null, colInicio=null;
+  for(const r of rowsVol){
+    if(!r) continue;
+    const idxHl = r.findIndex(v=>v==='Hl');
+    const idxData = r.findIndex(v=>v==='Data');
+    if(idxHl>=0){ linhaHl = r; colInicio = idxHl; }
+    if(idxData>=0){ linhaData = r; }
+  }
+  let somaVolume = 0, diasComVolume = 0;
+  if(linhaHl && linhaData && colInicio!==null){
+    const maxLen = Math.max(linhaHl.length, linhaData.length);
+    for(let c=colInicio+1; c<maxLen; c++){
+      const data = linhaData[c], vol = linhaHl[c];
+      if(!(data instanceof Date) || !inSelectedMonth(data, mes)) continue;
+      if(vol!==null && vol!==undefined){
+        somaVolume += vol;
+        if(vol!==0) diasComVolume++;
+      }
+    }
+  }
+  const baseWLP = diasComVolume>0 ? (somaVolume/(7.333*diasComVolume)) : null;
+
+  // aba WLP: col1 Horas Extras/Negativas, col6 Data, col8 Nome
+  const horasExtrasPorNome = {};
+  for(let i=1;i<rowsWlp.length;i++){
+    const r = rowsWlp[i]; if(!r) continue;
+    const horasExtrasRaw = r[1], data = r[6], nome = r[8];
+    if(!(data instanceof Date) || !inSelectedMonth(data, mes)) continue;
+    if(!nome) continue;
+    const key = normalizeName(nome);
+    horasExtrasPorNome[key] = (horasExtrasPorNome[key]||0) + valorParaHoras(horasExtrasRaw);
+  }
+
+  const resultados = [];
+  if(baseWLP!==null){
+    funcionarios.forEach(func=>{
+      const candidatos = [func.nome].concat(func.apelidos||[]).map(normalizeName);
+      let horasExtras = 0;
+      candidatos.forEach(c=>{ if(horasExtrasPorNome[c]!==undefined) horasExtras = horasExtrasPorNome[c]; });
+      const wlp = baseWLP - horasExtras;
+      resultados.push({funcionario_id:func.id, mes, indicador:'wlp', resultado:wlp});
+      resultados.push({funcionario_id:func.id, mes, indicador:'wlp_horas_extras', resultado:horasExtras});
+    });
+  }
+  return { resultados, baseWLP, diasComVolume, somaVolume };
+}
+
+async function processarPlanilhaArmazem(wb, wbRaw, mes, funcionarios, base){
+  const geral = []; // {nome, resultado, unidade, melhorMaior}
+  const individuais = []; // {funcionario_id, mes, indicador, resultado}
+  const erros = []; // mensagens de erro isoladas por indicador
+
+  function tentar(nomeIndicador, fn){
+    try{ fn(); }catch(e){ erros.push(nomeIndicador+': '+e.message); }
+  }
+
+  function findTotalRow(rows){
+    return rows ? rows.find(r=>r && r[0]==='Total') : null;
+  }
+
+  // Eficiência de Carregamento — aba EFC (col A data, col B %, linha "Total" = acumulado do mês)
+  const efc = sheetRows(wb, 'EFC');
+  const totalEfc = findTotalRow(efc);
+  if(totalEfc && totalEfc[1]!==null){
+    geral.push({nome:'Eficiência de Carregamento', resultado: totalEfc[1]*100, unidade:'%', melhorMaior:true, metaDefault:96});
+  }
+
+  // Prestação Física — aba "Prestação Fisica" (col A data, col C minutos, linha "Total" = acumulado)
+  const pf = sheetRows(wb, 'Prestação Fisica');
+  const totalPf = findTotalRow(pf);
+  if(totalPf && totalPf[1]!==null){
+    geral.push({nome:'Prestação Física (TI)', resultado: totalPf[1], unidade:'min', melhorMaior:false, metaDefault:15});
+  }
+
+  // Eficiência de Descarga — aba EFD (col A data, col B %, linha "Total" = acumulado do mês)
+  const efd = sheetRows(wb, 'EFD');
+  const totalEfd = findTotalRow(efd);
+  if(totalEfd && totalEfd[1]!==null){
+    geral.push({nome:'Eficiência de Descarga', resultado: totalEfd[1]*100, unidade:'%', melhorMaior:true, metaDefault:96});
+  }
+
+  // Blitz de Puxada
+  const viagens = sheetRows(wb, 'Viagens Puxada');
+  const blitzPux = sheetRows(wb, 'Blitz Puxada');
+  if(viagens && blitzPux){
+    let nViagens=0, nBlitz=0;
+    for(let i=1;i<viagens.length;i++){ const r=viagens[i]; if(r && r[2] instanceof Date && inSelectedMonth(r[2],mes)) nViagens++; }
+    for(let i=1;i<blitzPux.length;i++){ const r=blitzPux[i]; if(r && r[0] instanceof Date && inSelectedMonth(r[0],mes)) nBlitz++; }
+    if(nViagens>0) geral.push({nome:'Blitz de Puxada', resultado: nBlitz/nViagens*100, unidade:'%', melhorMaior:true, metaDefault:50});
+  }
+
+  // Quebra entre Turnos + Quebra Individual
+  // novo layout: 0 Nome Cadastro (célula mesclada, só na 1ª linha do bloco), 1 Nome Colaborador,
+  // 2 Código Produto, 3 Produto, 4 Data Ocorrência, 5 Data Lançamento, 6 Turno, 7 Qtd Unit, 8 Qtd NF, 9 Valor
+  const quebra = sheetRows(wb, 'Quebra por turno');
+  if(quebra){
+    const porTurno = {}; const porPessoa = {};
+    let ultimoNomeCadastro = null;
+    for(let i=1;i<quebra.length;i++){
+      const r = quebra[i]; if(!r) continue;
+      const nomeCadastroRaw = r[0], nomeColaborador = r[1], dataLanc = r[5], turno = r[6], valor = r[9];
+      if(nomeCadastroRaw && String(nomeCadastroRaw).trim()) ultimoNomeCadastro = nomeCadastroRaw;
+      const nome = ultimoNomeCadastro || nomeColaborador;
+      if(!(dataLanc instanceof Date) || !inSelectedMonth(dataLanc, mes)) continue;
+      if(turno) porTurno[turno] = (porTurno[turno]||0) + (valor||0);
+      if(nome) porPessoa[nome] = (porPessoa[nome]||0) + (valor||0);
+    }
+    Object.keys(porTurno).forEach(t=>{
+      geral.push({nome:'Quebra entre Turnos — '+t, resultado: porTurno[t], unidade:'r$', melhorMaior:false, metaDefault:500});
+    });
+    const funcionariosComQuebra = new Set();
+    Object.keys(porPessoa).forEach(nome=>{
+      const func = matchFuncionario(nome, funcionarios);
+      if(func){
+        individuais.push({funcionario_id:func.id, mes, indicador:'quebra_individual', resultado: porPessoa[nome]});
+        funcionariosComQuebra.add(func.id);
+      }
+    });
+    // quem não apareceu na planilha nesse mês teve zero de quebra — registra 0 em vez de deixar "sem dado"
+    funcionarios.forEach(func=>{
+      if(!funcionariosComQuebra.has(func.id)){
+        individuais.push({funcionario_id:func.id, mes, indicador:'quebra_individual', resultado:0});
+      }
+    });
+  }
+
+  // Aderência a Blitz de Carregamento
+  const blitzCarreg = sheetRows(wb, '03.11.35.04 - C');
+  if(blitzCarreg){
+    let sorteados=0, aferidos=0;
+    for(let i=1;i<blitzCarreg.length;i++){
+      const r = blitzCarreg[i]; if(!r) continue;
+      const data = r[2], status = (r[10]||'').trim();
+      if(!(data instanceof Date) || !inSelectedMonth(data, mes)) continue;
+      if(status==='Sorteado/Aferido' || status==='Sorteado Justificado') sorteados++;
+      if(status==='Sorteado/Aferido' || status==='Nao Sorteado/Aferido') aferidos++;
+    }
+    if(sorteados>0) geral.push({nome:'Aderência a Blitz de Carregamento', resultado: aferidos/sorteados*100, unidade:'%', melhorMaior:true, metaDefault:90});
+  }
+
+  // Blitz de Refugo
+  const blitzRefugo = sheetRows(wb, '03.11.34.03 - R');
+  if(blitzRefugo){
+    let sorteados=0, aferidos=0;
+    for(let i=1;i<blitzRefugo.length;i++){
+      const r = blitzRefugo[i]; if(!r) continue;
+      const data = r[2], status = (r[16]||'').trim();
+      if(!(data instanceof Date) || !inSelectedMonth(data, mes)) continue;
+      if(status==='Sorteado/Aferido' || status==='Sorteado nao Aferido') sorteados++;
+      if(status==='Sorteado/Aferido') aferidos++;
+    }
+    if(sorteados>0) geral.push({nome:'Blitz de Refugo', resultado: aferidos/sorteados*100, unidade:'%', melhorMaior:true, metaDefault:90});
+  }
+
+  // Fechamento de Estoque
+  tentar('Fechamento de Estoque', function(){
+    const fech = sheetRows(wb, '07.01');
+    const fechRaw = sheetRows(wbRaw, '07.01');
+    if(fech){
+      let total=0, ok=0;
+      for(let i=1;i<fech.length;i++){
+        const r = fech[i]; if(!r) continue;
+        const data = r[2];
+        const horaRaw = fechRaw && fechRaw[i] ? fechRaw[i][3] : r[3];
+        if(!(data instanceof Date) || !inSelectedMonth(data, mes)) continue;
+        total++;
+        const secs = timeToSeconds(horaRaw);
+        if(secs!==null && Math.round(secs/60) <= 11*60+20) ok++;
+      }
+      if(total>0) geral.push({nome:'Fechamento de Estoque', resultado: ok/total*100, unidade:'%', melhorMaior:true, metaDefault:90});
+    }
+  });
+
+  // TMA — média simples (sem agrupar por dia), filtrado só pelo número do mês (coluna A = MÊS)
+  // TMA (Geral): todos os turnos juntos. TMA por turno: mesmo filtro, separado por Turno (coluna C)
+  tentar('TMA', function(){
+    const tma = sheetRows(wb, 'TMA');
+    const tmaRaw = sheetRows(wbRaw, 'TMA');
+    if(tma){
+      const mesNumero = parseInt(mes.split('-')[1], 10);
+      const todos = [];
+      const porTurno = {};
+      for(let i=1;i<tma.length;i++){
+        const r = tma[i]; if(!r) continue;
+        const mesCol = r[0], turno = r[2];
+        const tempoTmaRaw = tmaRaw && tmaRaw[i] ? tmaRaw[i][4] : r[4];
+        if(mesCol!==mesNumero) continue;
+        const secs = timeToSeconds(tempoTmaRaw);
+        if(secs===null) continue;
+        todos.push(secs);
+        if(turno){ (porTurno[turno] = porTurno[turno]||[]).push(secs); }
+      }
+      if(todos.length>0){
+        const mediaGeral = todos.reduce((a,b)=>a+b,0)/todos.length;
+        geral.push({nome:'TMA (Geral)', resultado: mediaGeral/60, unidade:'time', melhorMaior:false, metaDefault:134});
+      }
+      Object.keys(porTurno).forEach(turno=>{
+        const lst = porTurno[turno];
+        const media = lst.reduce((a,b)=>a+b,0)/lst.length;
+        geral.push({nome:'TMA — Turno '+turno, resultado: media/60, unidade:'time', melhorMaior:false, metaDefault:134});
+      });
+    }
+  });
+  // Consumo de Gás GLP (por operador)
+  // novo layout: 0 KG (já calculado), 1 Nome Colaborador (cadastro), 2 Nº Abastecimento, 3 Motorista,
+  // ... 9 Data, 10 Hora, 11 Combustível, ... 20 Horas rodadas
+  tentar('Consumo de Gás GLP', function(){
+    const gasola = sheetRows(wb, 'Gasola');
+    if(gasola){
+      const porOperador = {};
+      for(let i=1;i<gasola.length;i++){
+        const r = gasola[i]; if(!r) continue;
+        const kg = r[0], nomeCadastro = r[1], motorista = r[3], data = r[9], combustivel = r[11], horas = r[20];
+        if(!(data instanceof Date) || !inSelectedMonth(data, mes)) continue;
+        if(combustivel !== 'Gás') continue;
+        const nome = (nomeCadastro && String(nomeCadastro).trim() && nomeCadastro!==0) ? nomeCadastro : motorista;
+        if(!nome) continue;
+        porOperador[nome] = porOperador[nome] || {kg:0, horas:0};
+        porOperador[nome].kg += (kg||0);
+        porOperador[nome].horas += (horas||0);
+      }
+      Object.keys(porOperador).forEach(nome=>{
+        const o = porOperador[nome];
+        if(o.horas<=0) return;
+        const func = matchFuncionario(nome, funcionarios);
+        if(func) individuais.push({funcionario_id:func.id, mes, indicador:'glp', resultado: o.kg/o.horas});
+      });
+    }
+  });
+
+  // Repack (por responsável)
+  // novo layout: 0 Nome Cadastro, 1 ID, 2 DATA, 3 RESPONSÁVEL, 4 HORA INÍCIO, 5 HORA FIM, ...
+  // 12 tempo médio já calculado (valor de hora/duração pronto)
+  tentar('Repack', function(){
+    const repack = sheetRows(wb, 'Repack');
+    const repackRaw = sheetRows(wbRaw, 'Repack');
+    if(repack){
+      const porResp = {};
+      for(let i=1;i<repack.length;i++){
+        const r = repack[i]; if(!r) continue;
+        const nomeCadastro = r[0], data = r[2], responsavel = r[3];
+        const tempoMedioRaw = repackRaw && repackRaw[i] ? repackRaw[i][12] : r[12];
+        if(!(data instanceof Date) || !inSelectedMonth(data, mes)) continue;
+        const secs = timeToSeconds(tempoMedioRaw);
+        if(secs===null) continue;
+        const nome = (nomeCadastro && String(nomeCadastro).trim() && nomeCadastro!==0) ? nomeCadastro : responsavel;
+        if(!nome) continue;
+        (porResp[nome] = porResp[nome]||[]).push(secs/60);
+      }
+      Object.keys(porResp).forEach(nome=>{
+        const lst = porResp[nome];
+        const media = lst.reduce((a,b)=>a+b,0)/lst.length;
+        const func = matchFuncionario(nome, funcionarios);
+        if(func) individuais.push({funcionario_id:func.id, mes, indicador:'repack', resultado: media});
+      });
+    }
+  });
+
+  return { geral, individuais, erros };
+}
+
+// ======================================================================
+// SALVAR RESULTADOS NO SUPABASE
+// ======================================================================
+async function salvarIndicadorGeral(base, mes, item){
+  const { data: existing } = await sb.from('rv_indicadores_armazem').select('id').eq('base',base).eq('mes',mes).eq('nome',item.nome).limit(1);
+  if(existing && existing.length>0){
+    await sb.from('rv_indicadores_armazem').update({ resultado:item.resultado, unidade:item.unidade, melhor_maior:item.melhorMaior }).eq('id', existing[0].id);
+  } else {
+    await sb.from('rv_indicadores_armazem').insert([{ base, mes, nome:item.nome, resultado:item.resultado, meta:item.metaDefault||0, valor:0, unidade:item.unidade, melhor_maior:item.melhorMaior }]);
+  }
+}
+async function salvarResultadoIndividual(item){
+  const { data: existing } = await sb.from('rv_resultados_individuais').select('id').eq('funcionario_id',item.funcionario_id).eq('mes',item.mes).eq('indicador',item.indicador).limit(1);
+  if(existing && existing.length>0){
+    await sb.from('rv_resultados_individuais').update({ resultado:item.resultado }).eq('id', existing[0].id);
+  } else {
+    await sb.from('rv_resultados_individuais').insert([item]);
+  }
+}
+// garante que os 4 indicadores do ajudante e o "erro geral" também tenham linha editável de meta/valor
+async function garantirMetaVariavelAjudante(base, mes){
+  const defaults = [
+    {nome:'Eficiência de Montagem (Ajudante)', meta:85, valor:75, unidade:'%', melhorMaior:true},
+    {nome:'Ociosidade (Ajudante)', meta:15, valor:75, unidade:'%', melhorMaior:false},
+    {nome:'Erro de Carregamento Individual (Ajudante)', meta:5, valor:75, unidade:'%', melhorMaior:false},
+    {nome:'Produtividade (Ajudante)', meta:0, valor:0, unidade:'pts', melhorMaior:true},
+    {nome:'Quebra Individual (Operador)', meta:200, valor:0, unidade:'r$', melhorMaior:false},
+    {nome:'Consumo de Gás GLP (Operador)', meta:1.9, valor:0, unidade:'kg/h', melhorMaior:false},
+    {nome:'Repack', meta:2.2333, valor:0, unidade:'min', melhorMaior:false}
+  ];
+  await Promise.all(defaults.map(async d=>{
+    const { data: existing } = await sb.from('rv_indicadores_armazem').select('id').eq('base',base).eq('mes',mes).eq('nome',d.nome).limit(1);
+    if(!existing || existing.length===0){
+      await sb.from('rv_indicadores_armazem').insert([{ base, mes, nome:d.nome, resultado:null, meta:d.meta, valor:d.valor, unidade:d.unidade, melhor_maior:d.melhorMaior }]);
+    } else {
+      // mantém meta/valor que a supervisora já ajustou, mas corrige unidade/direção caso o sistema tenha mudado
+      await sb.from('rv_indicadores_armazem').update({ unidade:d.unidade, melhor_maior:d.melhorMaior }).eq('id', existing[0].id);
+    }
+  }));
+}
+
+document.getElementById('imp-processar').addEventListener('click', async ()=>{
+  const base = document.getElementById('base-ativa').value;
+  const mes = document.getElementById('imp-mes').value.trim();
+  const f1 = document.getElementById('imp-file1').files[0];
+  const f2 = document.getElementById('imp-file2').files[0];
+  const statusEl = document.getElementById('imp-status');
+  if(!mes){ statusEl.textContent = 'Informe o mês (formato YYYY-MM).'; return; }
+  if(!f1 && !f2){ statusEl.textContent = 'Escolha ao menos uma das duas planilhas.'; return; }
+  const logParts = [];
+  if(!f1) logParts.push('<div style="color:var(--amber);margin-bottom:6px">⚠ Planilha 1 (ajudante) não foi selecionada nesta importação — os indicadores dela não vão atualizar.</div>');
+  if(!f2) logParts.push('<div style="color:var(--amber);margin-bottom:6px">⚠ Planilha 2 (armazém) não foi selecionada nesta importação — os indicadores dela (Eficiência de Descarga, Fechamento de Estoque, TMA, Repack, GLP, etc.) não vão atualizar. Lembre-se: depois de recarregar a página, é preciso clicar em "Escolher Arquivo" de novo, mesmo que o nome do arquivo antigo ainda apareça na tela.</div>');
+  statusEl.innerHTML = logParts.join('') + 'Processando...';
+  try{
+    const { data: funcionarios } = await sb.from('rv_funcionarios').select('*').eq('base', base);
+    await garantirMetaVariavelAjudante(base, mes);
+
+    if(f1){
+      const wb1 = await readWorkbook(f1);
+      const r1 = await processarPlanilhaAjudante(wb1, mes, funcionarios||[], base);
+      await Promise.all(r1.resultadosIndiv.map(item => salvarResultadoIndividual(item)));
+      if(r1.resultadosDiarios && r1.resultadosDiarios.length>0){
+        const { error: errDiarios } = await sb.from('rv_resultados_diarios').upsert(r1.resultadosDiarios, { onConflict: 'funcionario_id,mes,dia,indicador' });
+        if(errDiarios){
+          logParts.push('<div style="color:var(--red);margin-top:6px">⚠ Erro ao salvar valores diários: '+errDiarios.message+' — provavelmente falta rodar o schema_diarios.sql no Supabase.</div>');
+        }
+      }
+      if(r1.erroCarregamentoGeral!==null){
+        await salvarIndicadorGeral(base, mes, {nome:'Erro de Carregamento (geral)', resultado:r1.erroCarregamentoGeral, unidade:'%', melhorMaior:false, metaDefault:5});
+      }
+      const idsProcessados = Array.from(new Set(r1.resultadosIndiv.map(x=>x.funcionario_id)));
+      if(idsProcessados.length>0){
+        if(r1.paletesNokRows && r1.paletesNokRows.length>=0){
+          await sb.from('rv_paletes_nok').delete().eq('mes', mes).in('funcionario_id', idsProcessados);
+          if(r1.paletesNokRows.length>0) await sb.from('rv_paletes_nok').insert(r1.paletesNokRows);
+        }
+        if(r1.errosMontagemDetalheRows && r1.errosMontagemDetalheRows.length>=0){
+          await sb.from('rv_erros_montagem_detalhe').delete().eq('mes', mes).in('funcionario_id', idsProcessados);
+          if(r1.errosMontagemDetalheRows.length>0) await sb.from('rv_erros_montagem_detalhe').insert(r1.errosMontagemDetalheRows);
+        }
+        if(r1.errosCarregamentoDetalheRows && r1.errosCarregamentoDetalheRows.length>=0){
+          await sb.from('rv_erros_carregamento_detalhe').delete().eq('mes', mes).in('funcionario_id', idsProcessados);
+          if(r1.errosCarregamentoDetalheRows.length>0) await sb.from('rv_erros_carregamento_detalhe').insert(r1.errosCarregamentoDetalheRows);
+        }
+      }
+      const d = r1.diagnostico;
+      let diagHtml = '<div style="margin-top:8px"><b>Planilha 1 (ajudante):</b> '+d.ok.length+' de '+d.totalNomes+' nomes casaram com o cadastro. Erro de Carregamento (geral): '+(r1.erroCarregamentoGeral!==null?fmt(r1.erroCarregamentoGeral,2)+'%':'não calculado')+'</div>';
+      diagHtml += '<div style="color:var(--text-muted);margin-top:4px;font-size:11px">Abas encontradas no arquivo: '+wb1.SheetNames.join(', ')+'</div>';
+      if(d.semMatchFuncionario.length>0){
+        diagHtml += '<div style="color:var(--red);margin-top:4px">Nomes da planilha que NÃO bateram com nenhum funcionário cadastrado: '+d.semMatchFuncionario.join(', ')+'</div>';
+      }
+      logParts.push(diagHtml);
+
+      const wlpResult = await processarWLP(wb1, mes, funcionarios||[]);
+      await Promise.all(wlpResult.resultados.map(item => salvarResultadoIndividual(item)));
+      if(wlpResult.baseWLP!==null){
+        logParts.push('<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">WLP: volume do mês '+fmt(wlpResult.somaVolume,0)+' Hl em '+wlpResult.diasComVolume+' dia(s) com volume — base '+fmt(wlpResult.baseWLP,2)+'.</div>');
+      } else {
+        logParts.push('<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">WLP: abas "Volume"/"WLP" não encontradas ou sem dias com volume no mês — indicador não calculado.</div>');
+      }
+    }
+    if(f2){
+      const wb2 = await readWorkbook(f2);
+      const wb2Raw = await readWorkbookRaw(f2);
+
+      const r2 = await processarPlanilhaArmazem(wb2, wb2Raw, mes, funcionarios||[], base);
+      // remove o registro antigo "TMA" (nome exato) de versões anteriores — foi substituído por "TMA (Geral)" e "TMA — Turno X"
+      await sb.from('rv_indicadores_armazem').delete().eq('base', base).eq('mes', mes).eq('nome', 'TMA');
+      await Promise.all(r2.geral.map(item => salvarIndicadorGeral(base, mes, item)));
+      await Promise.all(r2.individuais.map(item => salvarResultadoIndividual(item)));
+      const listaGeral = r2.geral.map(it=>{
+        const val = it.unidade==='min'||it.unidade==='time' ? minToClock(it.resultado) : it.unidade==='r$' ? brl(it.resultado) : fmt(it.resultado,2)+'%';
+        return it.nome+': '+val;
+      }).join(' · ');
+      logParts.push('<div style="margin-top:8px"><b>Planilha 2 (armazém):</b> '+r2.geral.length+' indicador(es) gerais e '+r2.individuais.length+' resultado(s) individuais salvos.</div>');
+      logParts.push('<div style="color:var(--text-muted);margin-top:4px;font-size:11px">'+(listaGeral||'nenhum indicador geral encontrado')+'</div>');
+      if(r2.erros && r2.erros.length>0){
+        logParts.push('<div style="color:var(--red);margin-top:6px">⚠ Erros isolados (esses indicadores específicos falharam, mas o restante processou normalmente): '+r2.erros.join(' | ')+'</div>');
+      }
+    }
+    logParts.unshift('<b style="color:var(--e-green,#1fa15a)">Importação concluída e salva para toda a equipe.</b>');
+    statusEl.innerHTML = logParts.join('<br>');
+    toast('Planilha(s) processada(s) com sucesso.');
+    await renderArmazemTable();
+    await renderWlpTable();
+  }catch(e){
+    statusEl.textContent = 'Erro ao processar: ' + e.message;
+  }
+});
+
+async function renderJornadaTable(){
+  const base = document.getElementById('base-ativa').value;
+  const mes = document.getElementById('jrn-mes').value.trim();
+  const { data, error } = await sb.from('rv_jornada_diaria').select('*').eq('base', base).eq('mes', mes).order('dia');
+  if(error){ return; }
+  const rows = (data||[]).map(j=>{
+    const efetiva = (j.override_segundos!==null && j.override_segundos!==undefined) ? j.override_segundos : j.jornada_liquida_segundos;
+    return '<tr><td style="text-align:left">'+j.dia+'</td><td>'+(j.ultimo_palete_horario||'—')+'</td>' +
+      '<td>'+minToClock((j.jornada_bruta_segundos||0)/60)+'</td>' +
+      '<td>'+minToClock((j.jornada_liquida_segundos||0)/60)+'</td>' +
+      '<td><input data-jrn="'+j.id+'" type="text" placeholder="hh:mm:ss" value="'+(j.override_segundos!==null&&j.override_segundos!==undefined?minToClock(j.override_segundos/60):'')+'" style="width:100px"/></td>' +
+      '<td style="font-weight:500">'+minToClock(efetiva/60)+'</td></tr>';
+  }).join('');
+  document.getElementById('jornada-table').innerHTML =
+    '<thead><tr><th style="text-align:left">dia</th><th>último palete</th><th>jornada bruta</th><th>jornada líquida (calc.)</th><th>correção manual</th><th>usada na conta</th></tr></thead><tbody>'+rows+'</tbody>';
+  document.querySelectorAll('[data-jrn]').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      const val = inp.value.trim();
+      let segundos = null;
+      if(val){
+        const m = val.match(/^(\d{1,2}):(\d{2}):(\d{2})$/);
+        if(m) segundos = (+m[1])*3600 + (+m[2])*60 + (+m[3]);
+        else { toast('Formato inválido — use hh:mm:ss'); return; }
+      }
+      await sb.from('rv_jornada_diaria').update({ override_segundos: segundos }).eq('id', inp.dataset.jrn);
+      toast('Jornada atualizada. Reimporte a planilha do ajudante para recalcular a Ociosidade com esse ajuste.');
+      renderJornadaTable();
+    });
+  });
+}
+document.getElementById('jrn-mes').addEventListener('change', renderJornadaTable);
+
+const INDIV_INDICATOR_MAP = {
+  'Eficiência de Montagem (Ajudante)': {key:'eficiencia_montagem', unidade:'%'},
+  'Ociosidade (Ajudante)': {key:'ociosidade', unidade:'%'},
+  'Erro de Carregamento Individual (Ajudante)': {key:'erro_carregamento_individual', unidade:'%'},
+  'Produtividade (Ajudante)': {key:'produtividade', unidade:'pts'},
+  'Quebra Individual (Operador)': {key:'quebra_individual', unidade:'r$'},
+  'Consumo de Gás GLP (Operador)': {key:'glp', unidade:'kg/h'},
+  'Repack': {key:'repack', unidade:'min'}
+};
+
+async function renderWlpTable(){
+  const base = document.getElementById('base-ativa').value;
+  const mes = document.getElementById('imp-mes').value.trim() || '2026-06';
+  const { data: funcs } = await sb.from('rv_funcionarios').select('id,nome').eq('base', base).order('nome');
+  const ids = (funcs||[]).map(f=>f.id);
+  if(!ids.length){ document.getElementById('wlp-table').innerHTML=''; return; }
+  const { data: wlpRows } = await sb.from('rv_resultados_individuais').select('*').in('funcionario_id', ids).eq('mes', mes).in('indicador', ['wlp','wlp_horas_extras']);
+  const rows = (funcs||[]).map(f=>{
+    const wlp = (wlpRows||[]).find(r=>r.funcionario_id===f.id && r.indicador==='wlp');
+    const he = (wlpRows||[]).find(r=>r.funcionario_id===f.id && r.indicador==='wlp_horas_extras');
+    if(!wlp) return '';
+    return '<tr><td style="text-align:left">'+f.nome+'</td><td>'+fmt(wlp.resultado,2)+'</td><td>'+fmt(he?he.resultado:0,2)+'h</td></tr>';
+  }).filter(Boolean).join('');
+  document.getElementById('wlp-table').innerHTML = rows
+    ? '<thead><tr><th style="text-align:left">colaborador</th><th>WLP</th><th>horas extras no mês</th></tr></thead><tbody>'+rows+'</tbody>'
+    : '<tbody><tr><td style="color:var(--text-muted)">Sem dado de WLP para este mês/base ainda.</td></tr></tbody>';
+}
+
+async function renderArmazemTable(){
+  const base = document.getElementById('base-ativa').value;
+  const mes = document.getElementById('imp-mes').value.trim() || '2026-06';
+  const { data, error } = await sb.from('rv_indicadores_armazem').select('*').eq('base', base).eq('mes', mes).order('nome');
+  if(error){ return; }
+  const rows = (data||[]).map(ind=>{
+    const isTime = ind.unidade==='min' || ind.unidade==='time';
+    const isIndiv = !!INDIV_INDICATOR_MAP[ind.nome];
+    const ok = ind.resultado===null ? null : (ind.melhor_maior ? ind.resultado>=ind.meta : ind.resultado<=ind.meta);
+    const displayVal = ind.resultado===null ? (isIndiv?'ver individual':'—') : (isTime ? minToClock(ind.resultado) : (ind.unidade==='r$' ? brl(ind.resultado) : (ind.unidade==='kg/h' ? fmt(ind.resultado,3)+' kg/h' : fmt(ind.resultado,2)+'%')));
+    const expandBtn = isIndiv ? ('<button class="btn" data-expand="'+ind.id+'" data-key="'+INDIV_INDICATOR_MAP[ind.nome].key+'" style="font-size:11px;padding:3px 8px;margin-right:8px">+</button>') : '';
+    return '<tr><td style="text-align:left">'+expandBtn+ind.nome+'</td>' +
+      '<td style="color:'+(ok===null?'inherit':ok?'var(--teal)':'var(--red)')+'">'+displayVal+'</td>' +
+      '<td><input data-ind="'+ind.id+'" data-f="meta" type="number" step="0.01" value="'+ind.meta+'" style="width:80px"/></td>' +
+      '<td><input data-ind="'+ind.id+'" data-f="valor" type="number" step="1" value="'+ind.valor+'" style="width:80px"/></td>' +
+      '<td>'+(ok===null?'—':ok?'OK':'NOK')+'</td></tr>' +
+      '<tr data-detail-row="'+ind.id+'" style="display:none"><td colspan="5" style="background:var(--surface-2);padding:0"><div data-detail-body="'+ind.id+'" style="padding:10px 14px;font-size:12px"></div></td></tr>';
+  }).join('');
+  document.getElementById('armazem-table').innerHTML =
+    '<thead><tr><th style="text-align:left">indicador</th><th>resultado</th><th>meta</th><th>valor r$</th><th>status</th></tr></thead><tbody>'+rows+'</tbody>';
+  document.querySelectorAll('[data-ind]').forEach(inp=>{
+    inp.addEventListener('change', async ()=>{
+      await sb.from('rv_indicadores_armazem').update({ [inp.dataset.f]: parseFloat(inp.value)||0 }).eq('id', inp.dataset.ind);
+      renderArmazemTable();
+    });
+  });
+  document.querySelectorAll('[data-expand]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const id = btn.dataset.expand;
+      const key = btn.dataset.key;
+      const varId = 'ind_'+id;
+      const detailRow = document.querySelector('[data-detail-row="'+id+'"]');
+      const isOpen = detailRow.style.display !== 'none';
+      if(isOpen){ detailRow.style.display='none'; btn.textContent='+'; return; }
+      btn.textContent='–'; detailRow.style.display='table-row';
+      const body = document.querySelector('[data-detail-body="'+id+'"]');
+      body.innerHTML = 'Carregando...';
+      const { data: funcsAll } = await sb.from('rv_funcionarios').select('id,nome').eq('base', base).order('nome');
+      const idsAll = (funcsAll||[]).map(f=>f.id);
+      const { data: alocs } = idsAll.length ? await sb.from('rv_alocacoes').select('funcionario_id,variaveis').in('funcionario_id', idsAll).eq('mes', mes) : {data:[]};
+      const idsAlocados = (alocs||[]).filter(a=>(a.variaveis||[]).indexOf(varId)>=0).map(a=>a.funcionario_id);
+      const funcs = (funcsAll||[]).filter(f=>idsAlocados.indexOf(f.id)>=0);
+      const ids = funcs.map(f=>f.id);
+      const { data: results } = ids.length ? await sb.from('rv_resultados_individuais').select('*').eq('mes', mes).eq('indicador', key).in('funcionario_id', ids) : {data:[]};
+      const unidade = INDIV_INDICATOR_MAP[Object.keys(INDIV_INDICATOR_MAP).find(k=>INDIV_INDICATOR_MAP[k].key===key)].unidade;
+      const valorPontoAtual = key==='produtividade' ? await getValorPonto() : null;
+      const linhas = funcs.map(f=>{
+        const r = (results||[]).find(x=>x.funcionario_id===f.id);
+        let val = r ? formatResultado({resultado:r.resultado, unidade}) : '—';
+        if(r && key==='produtividade'){ val += ' <span style="color:var(--text-muted)">('+brl(r.resultado*valorPontoAtual)+')</span>'; }
+        return '<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span>'+f.nome+'</span><b style="font-family:var(--font-mono)">'+val+'</b></div>';
+      }).join('');
+      body.innerHTML = linhas || '<span style="color:var(--text-muted)">Nenhum funcionário com essa variável alocada ainda.</span>';
+    });
+  });
+}
+
+// ======================================================================
+// CATÁLOGO DE VARIÁVEIS (pra Alocação e Resultados)
+// ======================================================================
+async function getCatalogo(base, mes){
+  const { data: armazemRows } = await sb.from('rv_indicadores_armazem').select('*').eq('base', base).eq('mes', mes);
+  const catalog = [];
+  const indivMap = {
+    'Eficiência de Montagem (Ajudante)': 'eficiencia_montagem',
+    'Ociosidade (Ajudante)': 'ociosidade',
+    'Erro de Carregamento Individual (Ajudante)': 'erro_carregamento_individual',
+    'Produtividade (Ajudante)': 'produtividade',
+    'Quebra Individual (Operador)': 'quebra_individual',
+    'Consumo de Gás GLP (Operador)': 'glp',
+    'Repack': 'repack'
+  };
+  (armazemRows||[]).forEach(row=>{
+    const indicadorKey = indivMap[row.nome];
+    if(indicadorKey){
+      catalog.push({
+        id:'ind_'+row.id, nome:row.nome, meta:row.meta, valor:row.valor, unidade:row.unidade,
+        melhorMaior:row.melhor_maior, informativo: row.nome==='Produtividade (Ajudante)',
+        individual:true, indicadorKey
+      });
+    } else {
+      catalog.push({ id:'arm_'+row.id, nome:row.nome+' (Armazém)', meta:row.meta, valor:row.valor, unidade:row.unidade, melhorMaior:row.melhor_maior, individual:false, resultadoGeral:row.resultado });
+    }
+  });
+  return catalog;
+}
+
+async function resolveVariavel(v, funcionarioId, mes){
+  if(!v.individual){
+    return v.resultadoGeral===null||v.resultadoGeral===undefined ? null : { resultado:v.resultadoGeral, meta:v.meta, valor:v.valor, unidade:v.unidade };
+  }
+  const { data } = await sb.from('rv_resultados_individuais').select('resultado').eq('funcionario_id', funcionarioId).eq('mes', mes).eq('indicador', v.indicadorKey).limit(1);
+  if(!data || data.length===0 || data[0].resultado===null) return null;
+  return { resultado:data[0].resultado, meta:v.meta, valor:v.valor, unidade:v.unidade };
+}
+
+function pctAtingimento(res, melhorMaior){
+  if(res.meta===null||res.meta===undefined||res.meta===0) return res.resultado<=0 ? 100 : (melhorMaior?100:0);
+  const pct = melhorMaior ? (res.resultado/res.meta*100) : (res.meta/Math.max(res.resultado,0.0001)*100);
+  return Math.max(0, Math.min(100, pct));
+}
+function formatResultado(res){
+  if(res.unidade==='%') return fmt(res.resultado,2)+'%';
+  if(res.unidade==='r$') return brl(res.resultado);
+  if(res.unidade==='min'||res.unidade==='time') return minToClock(res.resultado);
+  if(res.unidade==='kg/h') return fmt(res.resultado,3)+' kg/h';
+  if(res.unidade==='pts') return Math.round(res.resultado).toLocaleString('pt-BR')+' pts';
+  return res.resultado;
+}
+function formatMeta(res){
+  if(res.meta===null||res.meta===undefined) return '—';
+  return formatResultado({resultado:res.meta, unidade:res.unidade});
+}
+async function getValorPonto(){
+  const { data } = await sb.from('rv_pontos_config').select('valor_ponto').eq('id',1).limit(1);
+  return (data && data[0] && data[0].valor_ponto) || 0.000899991603576876;
+}
+function calcularValorPago(v, res, valorPonto){
+  if(v.nome==='Produtividade (Ajudante)') return (res.resultado||0)*valorPonto;
+  if(v.informativo) return res.resultado||0;
+  const pct = pctAtingimento(res, v.melhorMaior);
+  return pct>=100-0.001 ? (res.valor||0) : 0;
+}
+
+// ======================================================================
+// ALOCAÇÃO DE VARIÁVEIS
+// ======================================================================
+async function renderAlocFuncSelect(){
+  const base = document.getElementById('base-ativa').value;
+  const { data } = await sb.from('rv_funcionarios').select('*').eq('base', base).order('nome');
+  const sel = document.getElementById('aloc-func');
+  const cur = sel.value;
+  sel.innerHTML = (data||[]).map(f=>'<option value="'+f.id+'">'+f.nome+' — '+(f.funcao||'')+'</option>').join('');
+  if(cur) sel.value = cur;
+  await renderAlocChecklist();
+  await renderAlocTable();
+}
+document.getElementById('aloc-func').addEventListener('change', renderAlocChecklist);
+document.getElementById('aloc-mes').addEventListener('change', ()=>{ renderAlocChecklist(); renderAlocTable(); });
+
+async function renderAlocChecklist(){
+  const base = document.getElementById('base-ativa').value;
+  const mes = document.getElementById('aloc-mes').value.trim();
+  const funcId = document.getElementById('aloc-func').value;
+  if(!funcId) return;
+  const catalog = await getCatalogo(base, mes);
+  const { data: existing } = await sb.from('rv_alocacoes').select('variaveis').eq('funcionario_id', funcId).eq('mes', mes).limit(1);
+  const marcados = (existing && existing.length>0) ? existing[0].variaveis : [];
+  const list = [];
+  for(const v of catalog){
+    const res = await resolveVariavel(v, funcId, mes);
+    const disponivel = !!res;
+    const checked = marcados.indexOf(v.id)>=0;
+    list.push('<label style="display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 8px;border:1px solid var(--border);border-radius:6px;'+(disponivel?'':'opacity:.4')+'">' +
+      '<input type="checkbox" data-var="'+v.id+'" '+(checked?'checked':'')+' '+(disponivel?'':'disabled')+'/>' + v.nome + (disponivel?'':' <span style="color:var(--text-muted)">(sem dado)</span>') + '</label>');
+  }
+  document.getElementById('aloc-checklist').innerHTML = list.join('');
+}
+
+document.getElementById('aloc-salvar').addEventListener('click', async ()=>{
+  const mes = document.getElementById('aloc-mes').value.trim();
+  const funcId = document.getElementById('aloc-func').value;
+  const marcados = Array.from(document.querySelectorAll('#aloc-checklist input:checked')).map(i=>i.dataset.var);
+  const { data: existing } = await sb.from('rv_alocacoes').select('id').eq('funcionario_id', funcId).eq('mes', mes).limit(1);
+  if(existing && existing.length>0){
+    await sb.from('rv_alocacoes').update({ variaveis: marcados }).eq('id', existing[0].id);
+  } else {
+    await sb.from('rv_alocacoes').insert([{ funcionario_id: funcId, mes, variaveis: marcados }]);
+  }
+  toast('Vínculo salvo.');
+  renderAlocTable();
+  if(typeof renderResultadosMatriz==='function') renderResultadosMatriz();
+  if(typeof renderRanking==='function') renderRanking();
+  if(typeof renderCorrida==='function') renderCorrida();
+});
+
+async function renderAlocTable(){
+  const base = document.getElementById('base-ativa').value;
+  const { data: funcs } = await sb.from('rv_funcionarios').select('id,nome').eq('base', base);
+  const ids = (funcs||[]).map(f=>f.id);
+  if(ids.length===0){ document.getElementById('aloc-table').innerHTML = ''; return; }
+  const { data } = await sb.from('rv_alocacoes').select('*').in('funcionario_id', ids);
+  const rows = (data||[]).map(a=>{
+    const f = (funcs||[]).find(x=>x.id===a.funcionario_id);
+    return '<tr><td>'+(f?f.nome:'—')+'</td><td>'+a.mes+'</td><td style="font-size:12px;color:var(--text-secondary)">'+(a.variaveis||[]).length+' variável(is)</td></tr>';
+  }).join('');
+  document.getElementById('aloc-table').innerHTML =
+    '<thead><tr><th style="text-align:left">funcionário</th><th style="text-align:left">mês</th><th style="text-align:left">variáveis</th></tr></thead><tbody>'+rows+'</tbody>';
+}
+
+// ======================================================================
+// PROGRAMA DE PONTOS
+// ======================================================================
+async function loadPontosConfig(){
+  const { data } = await sb.from('rv_pontos_config').select('*').eq('id',1).limit(1);
+  if(!data || data.length===0) return;
+  const c = data[0];
+  document.getElementById('cfg-abs2').value = c.abs2;
+  document.getElementById('cfg-abs1').value = c.abs1;
+  document.getElementById('cfg-abs05').value = c.abs05;
+  document.getElementById('cfg-faltaperda').value = c.falta_perda;
+  document.getElementById('cfg-varmult').value = c.var_mult;
+  document.getElementById('cfg-destaque').value = c.destaque;
+  document.getElementById('cfg-seguranca').value = c.seguranca;
+  document.getElementById('cfg-conduta').value = c.conduta;
+  document.getElementById('cfg-relatoseg').value = c.relato_seg;
+  document.getElementById('cfg-pontoaberto').value = c.ponto_aberto;
+}
+document.getElementById('cfg-salvar').addEventListener('click', async ()=>{
+  const payload = {
+    abs2: parseFloat(document.getElementById('cfg-abs2').value)||0,
+    abs1: parseFloat(document.getElementById('cfg-abs1').value)||0,
+    abs05: parseFloat(document.getElementById('cfg-abs05').value)||0,
+    falta_perda: parseFloat(document.getElementById('cfg-faltaperda').value)||0,
+    var_mult: parseFloat(document.getElementById('cfg-varmult').value)||0,
+    destaque: parseFloat(document.getElementById('cfg-destaque').value)||0,
+    seguranca: parseFloat(document.getElementById('cfg-seguranca').value)||0,
+    conduta: parseFloat(document.getElementById('cfg-conduta').value)||0,
+    relato_seg: parseFloat(document.getElementById('cfg-relatoseg').value)||0,
+    ponto_aberto: parseFloat(document.getElementById('cfg-pontoaberto').value)||0
+  };
+  await sb.from('rv_pontos_config').update(payload).eq('id',1);
+  toast('Configuração salva.');
+  renderRanking();
+});
+
+async function populatePontosFuncSelects(){
+  const base = document.getElementById('base-ativa').value;
+  const { data } = await sb.from('rv_funcionarios').select('id,nome').eq('base', base).order('nome');
+  ['ab-func','dq-func','sg-func','cd-func','rs-func','pa-func'].forEach(id=>{
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = (data||[]).map(f=>'<option value="'+f.id+'">'+f.nome+'</option>').join('');
+    if(cur) sel.value = cur;
+  });
+}
+
+async function renderAbsenteeismo(){
+  const base = document.getElementById('base-ativa').value;
+  const { data: funcs } = await sb.from('rv_funcionarios').select('id,nome').eq('base', base);
+  const ids = (funcs||[]).map(f=>f.id);
+  const { data } = ids.length ? await sb.from('rv_absenteeismo').select('*').in('funcionario_id', ids) : {data:[]};
+  const rows = (data||[]).map(a=>{
+    const f = (funcs||[]).find(x=>x.id===a.funcionario_id);
+    return '<tr><td>'+(f?f.nome:'—')+'</td><td>'+a.mes+'</td><td>'+fmt(a.pct,2)+'%</td><td>'+a.dias+'</td>' +
+      '<td style="white-space:nowrap"><button class="btn" data-editab="'+a.id+'" data-func="'+a.funcionario_id+'" data-mes="'+a.mes+'" data-pct="'+a.pct+'" data-dias="'+a.dias+'" style="font-size:11px;padding:4px 8px;margin-right:4px">editar</button>' +
+      '<button class="btn" data-delab="'+a.id+'" style="font-size:11px;padding:4px 8px">remover</button></td></tr>';
+  }).join('');
+  document.getElementById('ab-table').innerHTML = '<thead><tr><th style="text-align:left">funcionário</th><th>mês</th><th>%</th><th>dias</th><th></th></tr></thead><tbody>'+rows+'</tbody>';
+  document.querySelectorAll('[data-delab]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    if(!confirm('Remover este lançamento de absenteísmo?')) return;
+    await sb.from('rv_absenteeismo').delete().eq('id', btn.dataset.delab);
+    toast('Removido.'); renderAbsenteeismo(); renderRanking(); renderCorrida();
+  }));
+  document.querySelectorAll('[data-editab]').forEach(btn=>btn.addEventListener('click', ()=>{
+    document.getElementById('ab-func').value = btn.dataset.func;
+    document.getElementById('ab-mes').value = btn.dataset.mes;
+    document.getElementById('ab-pct').value = btn.dataset.pct;
+    document.getElementById('ab-dias').value = btn.dataset.dias;
+    document.getElementById('ab-pct').scrollIntoView({behavior:'smooth', block:'center'});
+    toast('Ajuste os valores e clique em Salvar para atualizar este lançamento.');
+  }));
+}
+document.getElementById('ab-add').addEventListener('click', async ()=>{
+  const funcId = document.getElementById('ab-func').value;
+  const mes = document.getElementById('ab-mes').value.trim();
+  const pct = parseFloat(document.getElementById('ab-pct').value)||0;
+  const dias = parseFloat(document.getElementById('ab-dias').value)||0;
+  const { data: existing } = await sb.from('rv_absenteeismo').select('id').eq('funcionario_id',funcId).eq('mes',mes).limit(1);
+  if(existing && existing.length>0) await sb.from('rv_absenteeismo').update({pct,dias}).eq('id',existing[0].id);
+  else await sb.from('rv_absenteeismo').insert([{funcionario_id:funcId, mes, pct, dias}]);
+  document.getElementById('ab-pct').value=''; document.getElementById('ab-dias').value='';
+  toast('Absenteísmo salvo.'); renderAbsenteeismo(); renderRanking(); renderCorrida();
+});
+
+async function renderDestaques(){
+  const base = document.getElementById('base-ativa').value;
+  const { data: funcs } = await sb.from('rv_funcionarios').select('id,nome').eq('base', base);
+  const ids = (funcs||[]).map(f=>f.id);
+  const { data } = ids.length ? await sb.from('rv_destaques').select('*').in('funcionario_id', ids) : {data:[]};
+  const rows = (data||[]).map(d=>{
+    const f = (funcs||[]).find(x=>x.id===d.funcionario_id);
+    return '<tr><td>'+(f?f.nome:'—')+'</td><td>'+d.mes+'</td><td><button class="btn" data-deldq="'+d.id+'" style="font-size:11px;padding:4px 8px">remover</button></td></tr>';
+  }).join('');
+  document.getElementById('dq-table').innerHTML = '<thead><tr><th style="text-align:left">funcionário</th><th>mês</th><th></th></tr></thead><tbody>'+rows+'</tbody>';
+  document.querySelectorAll('[data-deldq]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    await sb.from('rv_destaques').delete().eq('id', btn.dataset.deldq); renderDestaques(); renderRanking(); renderCorrida();
+  }));
+}
+document.getElementById('dq-add').addEventListener('click', async ()=>{
+  const funcId = document.getElementById('dq-func').value;
+  const mes = document.getElementById('dq-mes').value.trim();
+  await sb.from('rv_destaques').insert([{funcionario_id:funcId, mes}]);
+  toast('Destaque lançado.'); renderDestaques(); renderRanking(); renderCorrida();
+});
+
+async function renderOcorrencias(tipo){
+  const tabela = tipo==='seguranca' ? 'rv_ocorrencias_seguranca' : 'rv_ocorrencias_conduta';
+  const tableId = tipo==='seguranca' ? 'sg-table' : 'cd-table';
+  const prefix = tipo==='seguranca' ? 'sg' : 'cd';
+  const base = document.getElementById('base-ativa').value;
+  const { data: funcs } = await sb.from('rv_funcionarios').select('id,nome').eq('base', base);
+  const ids = (funcs||[]).map(f=>f.id);
+  const { data } = ids.length ? await sb.from(tabela).select('*').in('funcionario_id', ids) : {data:[]};
+  const rows = (data||[]).map(o=>{
+    const f = (funcs||[]).find(x=>x.id===o.funcionario_id);
+    return '<tr><td>'+(f?f.nome:'—')+'</td><td>'+(o.data||'—')+'</td><td>'+(o.descricao||'—')+'</td><td>-'+o.pontos+'</td>' +
+      '<td style="white-space:nowrap"><button class="btn" data-editocc="'+o.id+'" data-tipo="'+tipo+'" data-func="'+o.funcionario_id+'" data-data="'+(o.data||'')+'" data-desc="'+(o.descricao||'').replace(/"/g,'&quot;')+'" data-pontos="'+o.pontos+'" style="font-size:11px;padding:4px 8px;margin-right:4px">editar</button>' +
+      '<button class="btn" data-delocc="'+o.id+'" data-tab="'+tabela+'" style="font-size:11px;padding:4px 8px">remover</button></td></tr>';
+  }).join('');
+  document.getElementById(tableId).innerHTML = '<thead><tr><th style="text-align:left">funcionário</th><th>data</th><th>descrição</th><th>pontos</th><th></th></tr></thead><tbody>'+rows+'</tbody>';
+  document.querySelectorAll('[data-delocc]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    if(!confirm('Remover esta ocorrência?')) return;
+    await sb.from(btn.dataset.tab).delete().eq('id', btn.dataset.delocc);
+    renderOcorrencias(tipo); renderRanking(); renderCorrida();
+  }));
+  document.querySelectorAll('[data-editocc]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    const p = btn.dataset.tipo==='seguranca' ? 'sg' : 'cd';
+    document.getElementById(p+'-func').value = btn.dataset.func;
+    document.getElementById(p+'-data').value = btn.dataset.data;
+    document.getElementById(p+'-desc').value = btn.dataset.desc;
+    document.getElementById(p+'-pontos').value = btn.dataset.pontos;
+    await sb.from(tabela).delete().eq('id', btn.dataset.editocc);
+    renderOcorrencias(tipo);
+    toast('Ajuste os campos e clique em Lançar para salvar a versão corrigida.');
+  }));
+}
+document.getElementById('sg-add').addEventListener('click', async ()=>{
+  const funcId = document.getElementById('sg-func').value;
+  const data = document.getElementById('sg-data').value.trim();
+  const descricao = document.getElementById('sg-desc').value.trim();
+  const cfg = await sb.from('rv_pontos_config').select('seguranca').eq('id',1).limit(1);
+  const pontos = parseFloat(document.getElementById('sg-pontos').value) || (cfg.data && cfg.data[0] ? cfg.data[0].seguranca : 40);
+  await sb.from('rv_ocorrencias_seguranca').insert([{funcionario_id:funcId, data, descricao, pontos}]);
+  ['sg-data','sg-desc','sg-pontos'].forEach(id=>document.getElementById(id).value='');
+  toast('Ocorrência lançada.'); renderOcorrencias('seguranca'); renderRanking(); renderCorrida();
+});
+document.getElementById('cd-add').addEventListener('click', async ()=>{
+  const funcId = document.getElementById('cd-func').value;
+  const data = document.getElementById('cd-data').value.trim();
+  const descricao = document.getElementById('cd-desc').value.trim();
+  const cfg = await sb.from('rv_pontos_config').select('conduta').eq('id',1).limit(1);
+  const pontos = parseFloat(document.getElementById('cd-pontos').value) || (cfg.data && cfg.data[0] ? cfg.data[0].conduta : 40);
+  await sb.from('rv_ocorrencias_conduta').insert([{funcionario_id:funcId, data, descricao, pontos}]);
+  ['cd-data','cd-desc','cd-pontos'].forEach(id=>document.getElementById(id).value='');
+  toast('Ocorrência lançada.'); renderOcorrencias('conduta'); renderRanking(); renderCorrida();
+});
+
+async function renderQuantidade(tipo){
+  const tabela = tipo==='relatoseg' ? 'rv_relatos_seguranca' : 'rv_pontos_abertos';
+  const tableId = tipo==='relatoseg' ? 'rs-table' : 'pa-table';
+  const prefix = tipo==='relatoseg' ? 'rs' : 'pa';
+  const base = document.getElementById('base-ativa').value;
+  const { data: funcs } = await sb.from('rv_funcionarios').select('id,nome').eq('base', base);
+  const ids = (funcs||[]).map(f=>f.id);
+  const { data } = ids.length ? await sb.from(tabela).select('*').in('funcionario_id', ids) : {data:[]};
+  const rows = (data||[]).map(r=>{
+    const f = (funcs||[]).find(x=>x.id===r.funcionario_id);
+    return '<tr><td>'+(f?f.nome:'—')+'</td><td>'+r.mes+'</td><td>'+r.quantidade+'</td>' +
+      '<td style="white-space:nowrap"><button class="btn" data-editqt="'+r.id+'" data-tipo="'+tipo+'" data-func="'+r.funcionario_id+'" data-mes="'+r.mes+'" data-qtd="'+r.quantidade+'" style="font-size:11px;padding:4px 8px;margin-right:4px">editar</button>' +
+      '<button class="btn" data-delqt="'+r.id+'" data-tab="'+tabela+'" data-tipo="'+tipo+'" style="font-size:11px;padding:4px 8px">remover</button></td></tr>';
+  }).join('');
+  document.getElementById(tableId).innerHTML = '<thead><tr><th style="text-align:left">funcionário</th><th>mês</th><th>quantidade</th><th></th></tr></thead><tbody>'+rows+'</tbody>';
+  document.querySelectorAll('[data-delqt]').forEach(btn=>btn.addEventListener('click', async ()=>{
+    if(!confirm('Remover este lançamento?')) return;
+    await sb.from(btn.dataset.tab).delete().eq('id', btn.dataset.delqt);
+    toast('Removido.'); renderQuantidade(btn.dataset.tipo); renderRanking(); renderCorrida();
+  }));
+  document.querySelectorAll('[data-editqt]').forEach(btn=>btn.addEventListener('click', ()=>{
+    const p = btn.dataset.tipo==='relatoseg' ? 'rs' : 'pa';
+    document.getElementById(p+'-func').value = btn.dataset.func;
+    document.getElementById(p+'-mes').value = btn.dataset.mes;
+    document.getElementById(p+'-qtd').value = btn.dataset.qtd;
+    document.getElementById(p+'-qtd').scrollIntoView({behavior:'smooth', block:'center'});
+    toast('Ajuste a quantidade e clique em Salvar para atualizar este lançamento.');
+  }));
+}
+document.getElementById('rs-add').addEventListener('click', async ()=>{
+  const funcId = document.getElementById('rs-func').value;
+  const mes = document.getElementById('rs-mes').value.trim();
+  const quantidade = parseFloat(document.getElementById('rs-qtd').value)||0;
+  const { data: existing } = await sb.from('rv_relatos_seguranca').select('id').eq('funcionario_id',funcId).eq('mes',mes).limit(1);
+  if(existing && existing.length>0) await sb.from('rv_relatos_seguranca').update({quantidade}).eq('id',existing[0].id);
+  else await sb.from('rv_relatos_seguranca').insert([{funcionario_id:funcId, mes, quantidade}]);
+  document.getElementById('rs-qtd').value='';
+  toast('Salvo.'); renderQuantidade('relatoseg'); renderRanking(); renderCorrida();
+});
+document.getElementById('pa-add').addEventListener('click', async ()=>{
+  const funcId = document.getElementById('pa-func').value;
+  const mes = document.getElementById('pa-mes').value.trim();
+  const quantidade = parseFloat(document.getElementById('pa-qtd').value)||0;
+  const { data: existing } = await sb.from('rv_pontos_abertos').select('id').eq('funcionario_id',funcId).eq('mes',mes).limit(1);
+  if(existing && existing.length>0) await sb.from('rv_pontos_abertos').update({quantidade}).eq('id',existing[0].id);
+  else await sb.from('rv_pontos_abertos').insert([{funcionario_id:funcId, mes, quantidade}]);
+  document.getElementById('pa-qtd').value='';
+  toast('Salvo.'); renderQuantidade('pontoaberto'); renderRanking(); renderCorrida();
+});
+
+// ======================================================================
+// RESULTADOS POR COLABORADOR (matriz: funcionário x variável = valor pago)
+// ======================================================================
+document.getElementById('res-exportar').addEventListener('click', ()=>{
+  const dataExport = window._ultimaMatrizExport;
+  if(!dataExport || !dataExport.linhas || dataExport.linhas.length===0){ toast('Nada pra exportar ainda.'); return; }
+  const { varsOrdenadas, linhas, mes, base } = dataExport;
+  const header = ['Funcionário', ...varsOrdenadas.map(v=>v.nome), 'Valor Final'];
+  const aoa = [header];
+  linhas.forEach(l=>{
+    aoa.push([l.nome, ...l.celulas, brl(l.total)]);
+  });
+  const totalGeral = linhas.reduce((s,l)=>s+l.total,0);
+  aoa.push(['Total do mês', ...varsOrdenadas.map(()=>''), brl(totalGeral)]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wbOut = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wbOut, ws, 'Resultados');
+  XLSX.writeFile(wbOut, 'resultados_'+base.replace(/\s+/g,'_')+'_'+mes+'.xlsx');
+});
+
+const NOMES_MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+async function calcularTotalMesFuncionario(func, mes, catalogCache){
+  const { data: aloc } = await sb.from('rv_alocacoes').select('variaveis').eq('funcionario_id', func.id).eq('mes', mes).limit(1);
+  if(!aloc || aloc.length===0 || !aloc[0].variaveis || aloc[0].variaveis.length===0) return null;
+  if(!catalogCache[mes]) catalogCache[mes] = await getCatalogo(func.base, mes);
+  const catalog = catalogCache[mes];
+  const valorPontoAtual = await getValorPonto();
+  let total = 0;
+  for(const vid of aloc[0].variaveis){
+    const v = catalog.find(c=>c.id===vid);
+    if(!v) continue;
+    const res = await resolveVariavel(v, func.id, mes);
+    if(!res) continue;
+    total += calcularValorPago(v, res, valorPontoAtual);
+  }
+  return total;
+}
+
+async function renderVisaoAnual(){
+  const base = document.getElementById('base-ativa').value;
+  const ano = document.getElementById('anual-ano').value.trim();
+  const statusEl = document.getElementById('anual-status');
+  statusEl.textContent = 'Calculando...';
+  const { data: funcs } = await sb.from('rv_funcionarios').select('*').eq('base', base).order('nome');
+  if(!funcs || funcs.length===0){ document.getElementById('anual-table').innerHTML=''; statusEl.textContent=''; return; }
+  const ids = funcs.map(f=>f.id);
+
+  const { data: alocsAno } = await sb.from('rv_alocacoes').select('mes').in('funcionario_id', ids).ilike('mes', ano+'%');
+  const mesesComDado = Array.from(new Set((alocsAno||[]).map(a=>a.mes))).sort();
+  if(mesesComDado.length===0){
+    document.getElementById('anual-table').innerHTML = '<tbody><tr><td style="color:var(--text-muted)">Nenhuma alocação encontrada para '+ano+' nesta base ainda.</td></tr></tbody>';
+    statusEl.textContent = '';
+    window._ultimaAnualExport = null;
+    return;
+  }
+
+  const catalogCache = {};
+  const linhas = [];
+  for(const f of funcs){
+    const porMes = {};
+    let totalAno = 0;
+    for(const mes of mesesComDado){
+      const total = await calcularTotalMesFuncionario(f, mes, catalogCache);
+      porMes[mes] = total;
+      if(total!==null) totalAno += total;
+    }
+    linhas.push({ nome:f.nome, porMes, totalAno });
+  }
+
+  const headerCols = mesesComDado.map(m=>'<th>'+NOMES_MESES_ABREV[parseInt(m.split('-')[1],10)-1]+'/'+m.split('-')[0].slice(2)+'</th>').join('');
+  const rows = linhas.map(l=>{
+    const celulas = mesesComDado.map(m=>'<td>'+(l.porMes[m]!==null?brl(l.porMes[m]):'—')+'</td>').join('');
+    return '<tr><td style="text-align:left">'+l.nome+'</td>'+celulas+'<td style="font-weight:600">'+brl(l.totalAno)+'</td></tr>';
+  }).join('');
+  const totalGeralAno = linhas.reduce((s,l)=>s+l.totalAno,0);
+  document.getElementById('anual-table').innerHTML =
+    '<thead><tr><th style="text-align:left">funcionário</th>'+headerCols+'<th>total do ano</th></tr></thead>' +
+    '<tbody>'+rows+'</tbody>' +
+    '<tfoot><tr style="border-top:2px solid var(--border)"><td colspan="'+(mesesComDado.length+1)+'" style="text-align:right;font-weight:500">Total geral</td><td style="font-weight:600">'+brl(totalGeralAno)+'</td></tr></tfoot>';
+  statusEl.textContent = mesesComDado.length+' mês(es) com dado encontrado(s) em '+ano+'.';
+  window._ultimaAnualExport = { mesesComDado, linhas, ano, base };
+}
+document.getElementById('anual-ano').addEventListener('change', renderVisaoAnual);
+document.getElementById('anual-exportar').addEventListener('click', ()=>{
+  const dataExport = window._ultimaAnualExport;
+  if(!dataExport || !dataExport.linhas || dataExport.linhas.length===0){ toast('Nada pra exportar ainda.'); return; }
+  const { mesesComDado, linhas, ano, base } = dataExport;
+  const header = ['Funcionário', ...mesesComDado.map(m=>NOMES_MESES_ABREV[parseInt(m.split('-')[1],10)-1]+'/'+m.split('-')[0].slice(2)), 'Total do Ano'];
+  const aoa = [header];
+  linhas.forEach(l=>{
+    aoa.push([l.nome, ...mesesComDado.map(m=>l.porMes[m]!==null?brl(l.porMes[m]):'—'), brl(l.totalAno)]);
+  });
+  const totalGeral = linhas.reduce((s,l)=>s+l.totalAno,0);
+  aoa.push(['Total geral', ...mesesComDado.map(()=>''), brl(totalGeral)]);
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wbOut = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wbOut, ws, 'Visão Anual');
+  XLSX.writeFile(wbOut, 'visao_anual_'+base.replace(/\s+/g,'_')+'_'+ano+'.xlsx');
+});
+
+async function renderResultadosMatriz(){
+  const base = document.getElementById('base-ativa').value;
+  const mes = document.getElementById('res-mes').value.trim();
+  const { data: funcs } = await sb.from('rv_funcionarios').select('*').eq('base', base).order('nome');
+  if(!funcs || funcs.length===0){ document.getElementById('resultados-table').innerHTML = '<tbody><tr><td>Nenhum funcionário cadastrado nesta base.</td></tr></tbody>'; return; }
+  const ids = funcs.map(f=>f.id);
+  const { data: alocs } = await sb.from('rv_alocacoes').select('*').in('funcionario_id', ids).eq('mes', mes);
+  const catalog = await getCatalogo(base, mes);
+  const valorPontoAtual = await getValorPonto();
+
+  const varIdsUsados = Array.from(new Set((alocs||[]).flatMap(a=>a.variaveis||[])));
+  const varsOrdenadas = varIdsUsados.map(vid=>catalog.find(c=>c.id===vid)).filter(Boolean);
+
+  const linhas = [];
+  for(const f of funcs){
+    const aloc = (alocs||[]).find(a=>a.funcionario_id===f.id);
+    if(!aloc || !aloc.variaveis || aloc.variaveis.length===0) continue;
+    let total = 0;
+    const celulas = [];
+    for(const v of varsOrdenadas){
+      if((aloc.variaveis||[]).indexOf(v.id)<0){ celulas.push('—'); continue; }
+      const res = await resolveVariavel(v, f.id, mes);
+      if(!res){ celulas.push('sem dado'); continue; }
+      const pago = calcularValorPago(v, res, valorPontoAtual);
+      total += pago;
+      celulas.push(brl(pago));
+    }
+    linhas.push({ nome:f.nome, celulas, total });
+  }
+
+  if(varsOrdenadas.length===0 || linhas.length===0){
+    window._ultimaMatrizExport = null;
+    document.getElementById('resultados-table').innerHTML = '<tbody><tr><td style="color:var(--text-muted)">Nenhuma variável alocada para essa base/mês ainda. Vá em Alocação de Variáveis.</td></tr></tbody>';
+    return;
+  }
+
+  const headerCols = varsOrdenadas.map(v=>'<th>'+v.nome+'</th>').join('');
+  const rows = linhas.map(l=>'<tr><td style="text-align:left">'+l.nome+'</td>'+l.celulas.map(c=>'<td>'+c+'</td>').join('')+'<td style="font-weight:600">'+brl(l.total)+'</td></tr>').join('');
+  const totalGeral = linhas.reduce((s,l)=>s+l.total,0);
+  window._ultimaMatrizExport = { varsOrdenadas, linhas, mes, base };
+  document.getElementById('resultados-table').innerHTML =
+    '<thead><tr><th style="text-align:left">funcionário</th>'+headerCols+'<th>valor final</th></tr></thead>' +
+    '<tbody>'+rows+'</tbody>' +
+    '<tfoot><tr style="border-top:2px solid var(--border)"><td colspan="'+(varsOrdenadas.length+1)+'" style="text-align:right;font-weight:500">Total do mês</td><td style="font-weight:600">'+brl(totalGeral)+'</td></tr></tfoot>';
+}
+document.getElementById('res-mes').addEventListener('change', renderResultadosMatriz);
+
+
+async function calcularPontosFuncionario(func, cfg){
+  let total = 0;
+  const breakdown = [];
+  const { data: abs } = await sb.from('rv_absenteeismo').select('*').eq('funcionario_id', func.id);
+  (abs||[]).forEach(a=>{
+    let tier=0, tierLabel='';
+    if(a.pct<=0.5){ tier=cfg.abs05; tierLabel='≤0,5%'; } else if(a.pct<=1){ tier=cfg.abs1; tierLabel='≤1%'; } else if(a.pct<=2){ tier=cfg.abs2; tierLabel='≤2%'; }
+    if(tier>0){ total += tier; breakdown.push({label:'Absenteísmo '+tierLabel+' ('+a.mes+')', pontos:tier}); }
+    if(a.dias>0){ const perda=(a.dias||0)*cfg.falta_perda; total -= perda; breakdown.push({label:a.dias+' dia(s) de falta ('+a.mes+')', pontos:-perda}); }
+  });
+
+  const { data: alocs } = await sb.from('rv_alocacoes').select('*').eq('funcionario_id', func.id);
+  for(const a of (alocs||[])){
+    const catalog = await getCatalogo(func.base, a.mes);
+    let ok=0, tot=0;
+    for(const vid of (a.variaveis||[])){
+      const v = catalog.find(c=>c.id===vid); if(!v || v.informativo) continue;
+      const res = await resolveVariavel(v, func.id, a.mes); if(!res) continue;
+      tot++;
+      if(pctAtingimento(res, v.melhorMaior) >= 100-0.001) ok++;
+    }
+    if(tot>0){
+      const pts = Math.round((ok/tot*100) * cfg.var_mult);
+      total += pts;
+      breakdown.push({label:'Atingimento de variáveis ('+a.mes+') — '+ok+'/'+tot+' batidas', pontos:pts});
+    }
+  }
+
+  const { data: dest } = await sb.from('rv_destaques').select('mes').eq('funcionario_id', func.id);
+  (dest||[]).forEach(d=>{ total += cfg.destaque; breakdown.push({label:'Destaque do mês ('+d.mes+')', pontos:cfg.destaque}); });
+
+  const { data: segs } = await sb.from('rv_ocorrencias_seguranca').select('pontos,descricao,data').eq('funcionario_id', func.id);
+  (segs||[]).forEach(o=>{ total -= o.pontos; breakdown.push({label:'Segurança: '+(o.descricao||'ocorrência')+(o.data?' ('+o.data+')':''), pontos:-o.pontos}); });
+  const { data: conds } = await sb.from('rv_ocorrencias_conduta').select('pontos,descricao,data').eq('funcionario_id', func.id);
+  (conds||[]).forEach(o=>{ total -= o.pontos; breakdown.push({label:'Conduta: '+(o.descricao||'ocorrência')+(o.data?' ('+o.data+')':''), pontos:-o.pontos}); });
+
+  const { data: relatos } = await sb.from('rv_relatos_seguranca').select('quantidade,mes').eq('funcionario_id', func.id);
+  (relatos||[]).forEach(r=>{ if(r.quantidade>0){ const pts=r.quantidade*cfg.relato_seg; total+=pts; breakdown.push({label:r.quantidade+' relato(s) de segurança ('+r.mes+')', pontos:pts}); } });
+  const { data: pontosAb } = await sb.from('rv_pontos_abertos').select('quantidade,mes').eq('funcionario_id', func.id);
+  (pontosAb||[]).forEach(r=>{ if(r.quantidade>0){ const pts=r.quantidade*cfg.ponto_aberto; total-=pts; breakdown.push({label:r.quantidade+' ponto(s) em aberto ('+r.mes+')', pontos:-pts}); } });
+
+  return { total: Math.round(total), breakdown };
+}
+
+async function renderRanking(){
+  const base = document.getElementById('base-ativa').value;
+  const { data: funcs } = await sb.from('rv_funcionarios').select('*').eq('base', base);
+  const { data: cfgRows } = await sb.from('rv_pontos_config').select('*').eq('id',1).limit(1);
+  const cfg = cfgRows && cfgRows[0] ? cfgRows[0] : {abs2:10,abs1:20,abs05:30,falta_perda:5,var_mult:1,destaque:50,relato_seg:5,ponto_aberto:5};
+  const ranked = [];
+  for(const f of (funcs||[])){
+    const r = await calcularPontosFuncionario(f, cfg);
+    ranked.push({func:f, pts:r.total, breakdown:r.breakdown});
+  }
+  ranked.sort((a,b)=>b.pts-a.pts);
+  const rows = ranked.map((r,i)=>{
+    return '<tr><td><button class="btn" data-rank-expand="'+r.func.id+'" style="font-size:11px;padding:3px 8px;margin-right:8px">+</button>'+(i+1)+'º</td><td>'+r.func.nome+'</td><td style="font-weight:500">'+r.pts+' pts</td></tr>' +
+      '<tr data-rank-detail-row="'+r.func.id+'" style="display:none"><td colspan="3" style="background:var(--surface-2);padding:0"><div style="padding:10px 14px;font-size:12px">' +
+      (r.breakdown.length ? r.breakdown.map(b=>'<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)"><span>'+b.label+'</span><b style="font-family:var(--font-mono);color:'+(b.pontos>=0?'var(--teal)':'var(--red)')+'">'+(b.pontos>=0?'+':'')+b.pontos+'</b></div>').join('') : '<span style="color:var(--text-muted)">Nenhum lançamento ainda.</span>') +
+      '</div></td></tr>';
+  }).join('');
+  document.getElementById('ranking-table').innerHTML = '<thead><tr><th style="text-align:left">posição</th><th style="text-align:left">funcionário</th><th style="text-align:left">pontos</th></tr></thead><tbody>'+rows+'</tbody>';
+  document.querySelectorAll('[data-rank-expand]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.rankExpand;
+      const row = document.querySelector('[data-rank-detail-row="'+id+'"]');
+      const isOpen = row.style.display !== 'none';
+      row.style.display = isOpen ? 'none' : 'table-row';
+      btn.textContent = isOpen ? '+' : '–';
+    });
+  });
+}
+
+const carEmojis = ['🏎️','🚗','🚙','🚕','🚓','🛻','🚐','🛵','🚚'];
+const trailColors = ['#f5c542','#5fb3f0','#f0715f','#7fd97f','#c98af0','#f0a55f','#5fd0d0','#e57fb8','#a8d05f'];
+
+async function renderCorrida(){
+  const base = document.getElementById('base-ativa') ? document.getElementById('base-ativa').value : null;
+  if(!base){ document.getElementById('corrida-container').innerHTML = '<div class="corrida-header"><h1>🏁 Corrida de Pontos Armazém</h1><div class="sub">faça login no gerencial para ver a corrida da sua base</div></div>'; return; }
+  const { data: funcs } = await sb.from('rv_funcionarios').select('*').eq('base', base);
+  const { data: cfgRows } = await sb.from('rv_pontos_config').select('*').eq('id',1).limit(1);
+  const cfg = cfgRows && cfgRows[0] ? cfgRows[0] : {abs2:10,abs1:20,abs05:30,falta_perda:5,var_mult:1,destaque:50,relato_seg:5,ponto_aberto:5};
+  const ranked = [];
+  let i=0;
+  for(const f of (funcs||[])){
+    const r = await calcularPontosFuncionario(f, cfg);
+    ranked.push({func:f, pts:r.total, emoji:carEmojis[i%carEmojis.length], color:trailColors[i%trailColors.length]});
+    i++;
+  }
+  ranked.sort((a,b)=>b.pts-a.pts);
+  const maxPts = Math.max(1, ranked.length?ranked[0].pts:1, 1);
+
+  const podiumOrder = [1,0,2].filter(idx=>ranked[idx]);
+  const medalCls = ['gold','silver','bronze']; const medalEmoji = ['🥇','🥈','🥉'];
+  const podium = podiumOrder.map(idx=>{
+    const r = ranked[idx]; const cls = medalCls[idx];
+    return '<div class="podium-slot '+cls+'"><div class="medal">'+medalEmoji[idx]+'</div><div class="pcar">'+r.emoji+'</div>' +
+      '<div class="pname">'+r.func.nome+'</div><div class="ppts">'+r.pts+' pts</div><div class="podium-block">'+(idx+1)+'º</div></div>';
+  }).join('');
+
+  const lanes = ranked.map((r,i)=>{
+    const pct = Math.max(3, Math.min(94, (r.pts<=0?3:(r.pts/maxPts*94))));
+    return '<div class="corrida-lane"><div class="corrida-rank-badge">'+(i+1)+'º</div>' +
+      '<div class="corrida-trail" style="width:calc('+pct+'% + 30px);background:linear-gradient(90deg, transparent, '+r.color+'55 60%, '+r.color+'99)"></div>' +
+      '<div class="corrida-car" style="left:calc('+pct+'% - 6px)"><span class="emoji">'+r.emoji+'</span><span class="tag">'+r.func.nome+'<b>'+r.pts+' pts</b></span></div></div>';
+  }).join('');
+
+  document.getElementById('corrida-container').innerHTML =
+    '<div class="corrida-header"><h1>🏁 Corrida de Pontos Armazém</h1><div class="sub">'+base+' &middot; acumulado do ano</div></div>' +
+    '<div class="podium">'+podium+'</div>' +
+    '<div class="corrida-track">'+lanes+'</div>' +
+    '<div class="corrida-footer">No fim do ano, o <b>1º lugar</b> leva <b>R$ 800,00</b> 🏆</div>';
+}
+
+
+// ---------- restaurar sessão se já estava logada ----------
+(async ()=>{
+  if(new URLSearchParams(location.search).get('colaborador')==='1') return;
+  const { data } = await sb.auth.getSession();
+  if(data && data.session){ await afterLogin(data.session); }
+})();
+</script>
+</body>
+</html>
