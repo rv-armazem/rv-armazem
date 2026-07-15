@@ -198,6 +198,7 @@
           <button data-panel="alocacao">Alocação de Variáveis</button>
           <button data-panel="indicadores">Indicadores Armazém</button>
           <button data-panel="jornada">Ociosidade — Jornada Diária</button>
+          <button data-panel="diarios">Indicadores Diários (Ajudante)</button>
           <button data-panel="pontos">Programa de Pontos</button>
           <button data-panel="resultados">Resultados por Colaborador</button>
           <button data-panel="anual">Visão Anual</button>
@@ -308,6 +309,23 @@
             </div>
             <div style="overflow-x:auto"><table id="jornada-table"></table></div>
             <p style="font-size:11px;color:var(--text-muted);margin-top:10px">Jornada bruta: do horário fixo (21:30) até o último palete finalizado por qualquer ajudante naquele turno. Jornada líquida: já descontando 1h15 de refeição/intervalo — exceto quando a jornada bruta é menor que 6h. Se o valor de "correção manual" estiver preenchido, ele é usado no lugar do calculado para a Ociosidade daquele dia.</p>
+          </div>
+
+          <div id="panel-diarios" class="panel">
+            <div style="margin-bottom:14px">
+              <h2 style="font-size:16px">Indicadores Diários (Ajudante)</h2>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Eficiência de Montagem, Ociosidade e Erro de Carregamento, dia a dia, por colaborador</div>
+            </div>
+            <div class="row-flex" style="margin-bottom:14px;gap:10px;flex-wrap:wrap">
+              <label class="lab" style="margin:0">mês</label>
+              <input id="diarios-mes" type="text" value="2026-06" style="width:120px"/>
+              <label class="lab" style="margin:0">funcionário</label>
+              <select id="diarios-func" style="min-width:220px"></select>
+              <label class="lab" style="margin:0">turno</label>
+              <select id="diarios-turno" style="width:100px"><option value="">Todos</option><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option></select>
+            </div>
+            <div id="diarios-resumo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px"></div>
+            <div style="overflow-x:auto"><table id="diarios-table"></table></div>
           </div>
 
           <div id="panel-pontos" class="panel">
@@ -571,6 +589,7 @@ document.querySelectorAll('.side-nav button').forEach(btn=>{
     if(panel==='alocacao' && typeof renderAlocFuncSelect==='function') renderAlocFuncSelect();
     if(panel==='indicadores' && typeof renderArmazemTable==='function'){ renderArmazemTable(); renderWlpTable(); carregarConfigProdutividade(); }
     if(panel==='jornada' && typeof renderJornadaTable==='function') renderJornadaTable();
+    if(panel==='diarios' && typeof populateDiariosFuncSelect==='function'){ populateDiariosFuncSelect().then(renderDiariosTable); }
     if(panel==='pontos' && typeof renderRanking==='function') renderRanking();
     if(panel==='colab' && typeof renderColab==='function') renderColab();
   });
@@ -1874,6 +1893,62 @@ document.getElementById('imp-processar').addEventListener('click', async ()=>{
     statusEl.textContent = 'Erro ao processar: ' + e.message;
   }
 });
+
+async function populateDiariosFuncSelect(){
+  const base = document.getElementById('base-ativa').value;
+  const turno = document.getElementById('diarios-turno').value;
+  let q = sb.from('rv_funcionarios').select('id,nome,turno').eq('base', base).order('nome');
+  if(turno) q = q.eq('turno', turno);
+  const { data } = await q;
+  const sel = document.getElementById('diarios-func');
+  const cur = sel.value;
+  sel.innerHTML = (data||[]).map(f=>'<option value="'+f.id+'">'+f.nome+' (Turno '+(f.turno||'—')+')</option>').join('');
+  if(cur) sel.value = cur;
+}
+
+async function renderDiariosTable(){
+  const funcId = document.getElementById('diarios-func').value;
+  const mes = document.getElementById('diarios-mes').value.trim();
+  if(!funcId){ document.getElementById('diarios-table').innerHTML=''; document.getElementById('diarios-resumo').innerHTML=''; return; }
+
+  const { data: mensal } = await sb.from('rv_resultados_individuais').select('*').eq('funcionario_id', funcId).eq('mes', mes).in('indicador', ['eficiencia_montagem','ociosidade','erro_carregamento_individual']);
+  const effMes = (mensal||[]).find(r=>r.indicador==='eficiencia_montagem');
+  const ocioMes = (mensal||[]).find(r=>r.indicador==='ociosidade');
+  const erroMes = (mensal||[]).find(r=>r.indicador==='erro_carregamento_individual');
+
+  document.getElementById('diarios-resumo').innerHTML =
+    '<div class="card" style="text-align:center;padding:12px"><div class="lab" style="font-size:10px">Eficiência do mês</div><div style="font-size:18px;font-weight:600;margin-top:4px">'+(effMes?fmt(effMes.resultado,1)+'%':'—')+'</div></div>' +
+    '<div class="card" style="text-align:center;padding:12px"><div class="lab" style="font-size:10px">Ociosidade do mês</div><div style="font-size:18px;font-weight:600;margin-top:4px">'+(ocioMes?fmt(ocioMes.resultado,1)+'%':'—')+'</div></div>' +
+    '<div class="card" style="text-align:center;padding:12px"><div class="lab" style="font-size:10px">Erro de Carregamento do mês</div><div style="font-size:18px;font-weight:600;margin-top:4px">'+(erroMes?fmt(erroMes.resultado,1)+'%':'—')+'</div></div>';
+
+  const { data: diariosRaw } = await sb.from('rv_resultados_diarios').select('*').eq('funcionario_id', funcId).eq('mes', mes);
+  const diasData = {};
+  (diariosRaw||[]).forEach(r=>{
+    diasData[r.dia] = diasData[r.dia] || {};
+    const map = {paletes_dia:'paletes', eficientes_dia:'eficientes', esforco_dia:'esforco', jornada_dia:'jornada', mapas_dia:'mapas', erros_carregamento_dia:'errosCarregamento'};
+    if(map[r.indicador]) diasData[r.dia][map[r.indicador]] = r.resultado;
+  });
+  const dias = Object.keys(diasData).map(Number).sort((a,b)=>a-b);
+
+  const rows = dias.map(d=>{
+    const x = diasData[d];
+    const effDia = x.paletes>0 ? (x.eficientes/x.paletes*100) : null;
+    const ocioDia = x.jornada>0 ? (100 - (x.esforco||0)/x.jornada*100) : null;
+    const erroDia = x.mapas>0 ? ((x.errosCarregamento||0)/x.mapas*100) : null;
+    return '<tr><td style="text-align:left">'+String(d).padStart(2,'0')+'</td>' +
+      '<td>'+(effDia!==null?fmt(effDia,1)+'%':'—')+'</td>' +
+      '<td>'+(ocioDia!==null?fmt(ocioDia,1)+'%':'—')+'</td>' +
+      '<td>'+(erroDia!==null?fmt(erroDia,1)+'%':'—')+'</td></tr>';
+  }).join('');
+
+  document.getElementById('diarios-table').innerHTML = dias.length
+    ? '<thead><tr><th style="text-align:left">dia</th><th>Eficiência de Montagem</th><th>Ociosidade</th><th>Erro de Carregamento</th></tr></thead><tbody>'+rows+'</tbody>'
+    : '<tbody><tr><td style="color:var(--text-muted)">Sem valores diários para esse colaborador/mês ainda.</td></tr></tbody>';
+}
+
+document.getElementById('diarios-turno').addEventListener('change', async ()=>{ await populateDiariosFuncSelect(); await renderDiariosTable(); });
+document.getElementById('diarios-func').addEventListener('change', renderDiariosTable);
+document.getElementById('diarios-mes').addEventListener('change', renderDiariosTable);
 
 async function renderJornadaTable(){
   const base = document.getElementById('base-ativa').value;
