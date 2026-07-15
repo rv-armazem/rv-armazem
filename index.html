@@ -255,6 +255,18 @@
               <div id="aloc-checklist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:6px;margin:8px 0 14px"></div>
               <button class="btn primary" id="aloc-salvar">Salvar vínculo do mês</button>
             </div>
+            <div class="card" style="margin-bottom:16px">
+              <div class="lab" style="margin-bottom:8px">repetir alocações de um mês pra outro</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-bottom:10px">Copia as variáveis alocadas de cada funcionário no mês de origem para o mês de destino — só preenche quem ainda não tem nada alocado no destino, não sobrescreve edições já feitas.</div>
+              <div class="row-flex" style="gap:10px;flex-wrap:wrap">
+                <label class="lab" style="margin:0">de</label>
+                <input id="aloc-copiar-de" type="text" placeholder="2026-06" style="width:110px"/>
+                <label class="lab" style="margin:0">para</label>
+                <input id="aloc-copiar-para" type="text" placeholder="2026-07" style="width:110px"/>
+                <button class="btn primary" id="aloc-copiar-btn">Copiar alocações</button>
+              </div>
+              <div id="aloc-copiar-status" style="font-size:12px;color:var(--text-secondary);margin-top:10px"></div>
+            </div>
             <div class="lab" style="margin-bottom:8px">vínculos já salvos</div>
             <div style="overflow-x:auto"><table id="aloc-table"></table></div>
           </div>
@@ -314,18 +326,39 @@
           <div id="panel-diarios" class="panel">
             <div style="margin-bottom:14px">
               <h2 style="font-size:16px">Indicadores Diários (Ajudante)</h2>
-              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Eficiência de Montagem, Ociosidade e Erro de Carregamento, dia a dia, por colaborador</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">Eficiência de Montagem, Ociosidade e Erro de Carregamento, dia a dia</div>
             </div>
-            <div class="row-flex" style="margin-bottom:14px;gap:10px;flex-wrap:wrap">
-              <label class="lab" style="margin:0">mês</label>
-              <input id="diarios-mes" type="text" value="2026-06" style="width:120px"/>
-              <label class="lab" style="margin:0">funcionário</label>
-              <select id="diarios-func" style="min-width:220px"></select>
-              <label class="lab" style="margin:0">turno</label>
-              <select id="diarios-turno" style="width:100px"><option value="">Todos</option><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option></select>
+            <div class="row-flex" style="margin-bottom:14px;gap:8px">
+              <button class="btn primary" id="diarios-modo-colab" style="font-size:12px">Por colaborador</button>
+              <button class="btn" id="diarios-modo-indic" style="font-size:12px">Por indicador (comparar time)</button>
             </div>
-            <div id="diarios-resumo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px"></div>
-            <div style="overflow-x:auto"><table id="diarios-table"></table></div>
+            <div id="diarios-modo-colab-wrap">
+              <div class="row-flex" style="margin-bottom:14px;gap:10px;flex-wrap:wrap">
+                <label class="lab" style="margin:0">mês</label>
+                <input id="diarios-mes" type="text" value="2026-06" style="width:120px"/>
+                <label class="lab" style="margin:0">funcionário</label>
+                <select id="diarios-func" style="min-width:220px"></select>
+                <label class="lab" style="margin:0">turno</label>
+                <select id="diarios-turno" style="width:100px"><option value="">Todos</option><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option></select>
+              </div>
+              <div id="diarios-resumo" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px"></div>
+              <div style="overflow-x:auto"><table id="diarios-table"></table></div>
+            </div>
+            <div id="diarios-modo-indic-wrap" style="display:none">
+              <div class="row-flex" style="margin-bottom:14px;gap:10px;flex-wrap:wrap">
+                <label class="lab" style="margin:0">mês</label>
+                <input id="diarios-indic-mes" type="text" value="2026-06" style="width:120px"/>
+                <label class="lab" style="margin:0">indicador</label>
+                <select id="diarios-indic-tipo" style="width:220px">
+                  <option value="eficiencia">Eficiência de Montagem</option>
+                  <option value="ociosidade">Ociosidade</option>
+                  <option value="erro">Erro de Carregamento</option>
+                </select>
+                <label class="lab" style="margin:0">turno</label>
+                <select id="diarios-indic-turno" style="width:100px"><option value="">Todos</option><option value="A">A</option><option value="B">B</option><option value="C" selected>C</option></select>
+              </div>
+              <div style="overflow-x:auto"><table id="diarios-indic-table"></table></div>
+            </div>
           </div>
 
           <div id="panel-pontos" class="panel">
@@ -1950,6 +1983,73 @@ document.getElementById('diarios-turno').addEventListener('change', async ()=>{ 
 document.getElementById('diarios-func').addEventListener('change', renderDiariosTable);
 document.getElementById('diarios-mes').addEventListener('change', renderDiariosTable);
 
+document.getElementById('diarios-modo-colab').addEventListener('click', ()=>{
+  document.getElementById('diarios-modo-colab').classList.add('primary');
+  document.getElementById('diarios-modo-indic').classList.remove('primary');
+  document.getElementById('diarios-modo-colab-wrap').style.display = 'block';
+  document.getElementById('diarios-modo-indic-wrap').style.display = 'none';
+});
+document.getElementById('diarios-modo-indic').addEventListener('click', ()=>{
+  document.getElementById('diarios-modo-indic').classList.add('primary');
+  document.getElementById('diarios-modo-colab').classList.remove('primary');
+  document.getElementById('diarios-modo-colab-wrap').style.display = 'none';
+  document.getElementById('diarios-modo-indic-wrap').style.display = 'block';
+  renderDiariosPorIndicador();
+});
+document.getElementById('diarios-indic-mes').addEventListener('change', renderDiariosPorIndicador);
+document.getElementById('diarios-indic-tipo').addEventListener('change', renderDiariosPorIndicador);
+document.getElementById('diarios-indic-turno').addEventListener('change', renderDiariosPorIndicador);
+
+async function renderDiariosPorIndicador(){
+  const base = document.getElementById('base-ativa').value;
+  const mes = document.getElementById('diarios-indic-mes').value.trim();
+  const tipo = document.getElementById('diarios-indic-tipo').value;
+  const turno = document.getElementById('diarios-indic-turno').value;
+
+  let q = sb.from('rv_funcionarios').select('id,nome,turno').eq('base', base).order('nome');
+  if(turno) q = q.eq('turno', turno);
+  const { data: funcs } = await q;
+  if(!funcs || funcs.length===0){ document.getElementById('diarios-indic-table').innerHTML=''; return; }
+  const ids = funcs.map(f=>f.id);
+
+  const { data: diariosRaw } = await sb.from('rv_resultados_diarios').select('*').in('funcionario_id', ids).eq('mes', mes);
+  const porFuncDia = {}; // funcId -> dia -> {paletes,eficientes,esforco,jornada,mapas,errosCarregamento}
+  const map = {paletes_dia:'paletes', eficientes_dia:'eficientes', esforco_dia:'esforco', jornada_dia:'jornada', mapas_dia:'mapas', erros_carregamento_dia:'errosCarregamento'};
+  (diariosRaw||[]).forEach(r=>{
+    porFuncDia[r.funcionario_id] = porFuncDia[r.funcionario_id] || {};
+    porFuncDia[r.funcionario_id][r.dia] = porFuncDia[r.funcionario_id][r.dia] || {};
+    if(map[r.indicador]) porFuncDia[r.funcionario_id][r.dia][map[r.indicador]] = r.resultado;
+  });
+
+  function valorIndicador(x){
+    if(!x) return null;
+    if(tipo==='eficiencia') return x.paletes>0 ? (x.eficientes/x.paletes*100) : null;
+    if(tipo==='ociosidade') return x.jornada>0 ? (100 - (x.esforco||0)/x.jornada*100) : null;
+    if(tipo==='erro') return x.mapas>0 ? ((x.errosCarregamento||0)/x.mapas*100) : null;
+  }
+
+  const todosDias = new Set();
+  Object.values(porFuncDia).forEach(diasObj=>Object.keys(diasObj).forEach(d=>todosDias.add(Number(d))));
+  const dias = Array.from(todosDias).sort((a,b)=>a-b);
+
+  if(dias.length===0){
+    document.getElementById('diarios-indic-table').innerHTML = '<tbody><tr><td style="color:var(--text-muted)">Sem valores diários encontrados para esse mês/turno ainda.</td></tr></tbody>';
+    return;
+  }
+
+  const headerCols = funcs.map(f=>'<th>'+f.nome+'</th>').join('');
+  const rows = dias.map(d=>{
+    const celulas = funcs.map(f=>{
+      const v = valorIndicador((porFuncDia[f.id]||{})[d]);
+      return '<td>'+(v!==null?fmt(v,1)+'%':'—')+'</td>';
+    }).join('');
+    return '<tr><td style="text-align:left">'+String(d).padStart(2,'0')+'</td>'+celulas+'</tr>';
+  }).join('');
+
+  document.getElementById('diarios-indic-table').innerHTML =
+    '<thead><tr><th style="text-align:left">dia</th>'+headerCols+'</tr></thead><tbody>'+rows+'</tbody>';
+}
+
 async function renderJornadaTable(){
   const base = document.getElementById('base-ativa').value;
   const mes = document.getElementById('jrn-mes').value.trim();
@@ -2184,6 +2284,38 @@ document.getElementById('aloc-salvar').addEventListener('click', async ()=>{
   if(typeof renderResultadosMatriz==='function') renderResultadosMatriz();
   if(typeof renderRanking==='function') renderRanking();
   if(typeof renderCorrida==='function') renderCorrida();
+});
+
+document.getElementById('aloc-copiar-btn').addEventListener('click', async ()=>{
+  const mesDe = document.getElementById('aloc-copiar-de').value.trim();
+  const mesPara = document.getElementById('aloc-copiar-para').value.trim();
+  const statusEl = document.getElementById('aloc-copiar-status');
+  if(!mesDe || !mesPara){ statusEl.textContent = 'Preenche os dois meses (formato YYYY-MM).'; return; }
+  if(mesDe===mesPara){ statusEl.textContent = 'Escolhe meses diferentes.'; return; }
+  statusEl.textContent = 'Copiando...';
+
+  const base = document.getElementById('base-ativa').value;
+  const { data: funcs } = await sb.from('rv_funcionarios').select('id').eq('base', base);
+  const ids = (funcs||[]).map(f=>f.id);
+  if(ids.length===0){ statusEl.textContent = 'Nenhum funcionário nesta base.'; return; }
+
+  const { data: origemRows } = await sb.from('rv_alocacoes').select('*').in('funcionario_id', ids).eq('mes', mesDe);
+  const { data: destinoRows } = await sb.from('rv_alocacoes').select('funcionario_id').in('funcionario_id', ids).eq('mes', mesPara);
+  const jaTemDestino = new Set((destinoRows||[]).map(r=>r.funcionario_id));
+
+  const paraInserir = (origemRows||[])
+    .filter(r => !jaTemDestino.has(r.funcionario_id))
+    .map(r => ({ funcionario_id: r.funcionario_id, mes: mesPara, variaveis: r.variaveis }));
+
+  if(paraInserir.length>0){
+    await sb.from('rv_alocacoes').insert(paraInserir);
+  }
+  const pulados = (origemRows||[]).length - paraInserir.length;
+  statusEl.textContent = paraInserir.length+' funcionário(s) copiado(s) de '+mesDe+' para '+mesPara+'. '+pulados+' já tinham alocação em '+mesPara+' e não foram alterados.';
+  toast('Alocações copiadas.');
+  document.getElementById('aloc-mes').value = mesPara;
+  renderAlocTable();
+  renderAlocChecklist();
 });
 
 async function renderAlocTable(){
